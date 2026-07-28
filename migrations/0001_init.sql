@@ -368,7 +368,6 @@ CREATE TABLE IF NOT EXISTS chain_of_custody (
 CREATE INDEX IF NOT EXISTS chain_of_custody_tenant_reading_id_idx ON chain_of_custody (tenant, reading_id);
 CREATE INDEX IF NOT EXISTS chain_of_custody_tenant_device_id_idx ON chain_of_custody (tenant, device_id);
 CREATE INDEX IF NOT EXISTS chain_of_custody_created_at_idx ON chain_of_custody (created_at);
-CREATE INDEX IF NOT EXISTS chain_of_custody_regulatory_id_idx ON chain_of_custody (regulatory_id);
 
 CREATE TABLE IF NOT EXISTS regulatory_exports (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
