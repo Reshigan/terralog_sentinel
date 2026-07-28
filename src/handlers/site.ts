@@ -1,7 +1,7 @@
 // GENERATED from the manifest. Do not edit.
 import { json, noteTenant, readJson, requestId } from "../lib/http";
 import { ADMIN_ROLES, audit, requireRole, requireSession, WRITE_ROLES } from "./auth";
-import type { Site, Bucket, ListSitesHandler, ListSitesStatsHandler, GetSiteHandler, CreateSiteHandler, CreateSiteBulkHandler, UpdateSiteHandler, DeleteSiteHandler } from "../types";
+import type { Site, Row, Bucket, SiteSyncStatsHandler, ListSitesHandler, ListSitesStatsHandler, GetSiteHandler, CreateSiteHandler, CreateSiteBulkHandler, UpdateSiteHandler, DeleteSiteHandler } from "../types";
 
 function constraintError(err: unknown): string | null {
   const msg = err instanceof Error ? err.message : String(err);
@@ -14,7 +14,7 @@ function constraintError(err: unknown): string | null {
 }
 
 type Spec = { name: string; type: "text" | "integer" | "real" | "date" | "bool" | "enum"; values?: string[] };
-const FIELDS: Spec[] = [{ name: "name", type: "text" }, { name: "latitude", type: "real" }, { name: "longitude", type: "real" }, { name: "description", type: "text" }, { name: "is_active", type: "bool" }, { name: "site_type", type: "enum", values: ["pipeline","storage","processing","distribution"] }, { name: "region_id", type: "integer" }, { name: "status", type: "enum", values: ["operational","maintenance","decommissioned"] }, { name: "installation_date", type: "date" }, { name: "last_inspection_date", type: "date" }, { name: "maintenance_frequency_days", type: "integer" }];
+const FIELDS: Spec[] = [{ name: "name", type: "text" }, { name: "latitude", type: "real" }, { name: "longitude", type: "real" }, { name: "mean_value", type: "real" }, { name: "std_dev", type: "real" }, { name: "last_sync", type: "date" }, { name: "sync_success_rate", type: "real" }, { name: "technician_email", type: "text" }, { name: "status", type: "enum", values: ["active","maintenance","decommissioned"] }, { name: "zone_id", type: "integer" }];
 function validate(body: Partial<Site>, partial = false): string | null {
   const b = body as Record<string, unknown>;
   for (const { name, type, values } of FIELDS) {
@@ -33,17 +33,17 @@ function validate(body: Partial<Site>, partial = false): string | null {
   return null;
 }
 
-const WORKFLOW: Record<string, string[]> = {"operational":["maintenance","decommissioned"],"maintenance":["operational","decommissioned"],"decommissioned":[]};
+const WORKFLOW: Record<string, string[]> = {"active":["maintenance","decommissioned"],"maintenance":["active","decommissioned"],"decommissioned":[]};
 
-const SORTABLE: string[] = ["id","name","latitude","longitude","description","is_active","site_type","region_id","status","installation_date","last_inspection_date","maintenance_frequency_days"];
-const SEARCHABLE: string[] = ["name","description","site_type","status","installation_date","last_inspection_date"];
-const FILTERABLE: string[] = ["region_id"];
-const MATCHABLE: string[] = ["site_type","status"];
-const DATED: string[] = ["installation_date","last_inspection_date"];
-const GROUPABLE: string[] = ["is_active","site_type","region_id","status","installation_date","last_inspection_date"];
-const MEASURABLE: string[] = ["latitude","longitude","maintenance_frequency_days"];
+const SORTABLE: string[] = ["id","name","latitude","longitude","mean_value","std_dev","last_sync","sync_success_rate","technician_email","status","zone_id"];
+const SEARCHABLE: string[] = ["name","last_sync","technician_email","status"];
+const FILTERABLE: string[] = ["zone_id"];
+const MATCHABLE: string[] = ["status"];
+const DATED: string[] = ["last_sync"];
+const GROUPABLE: string[] = ["last_sync","status","zone_id"];
+const MEASURABLE: string[] = ["latitude","longitude","mean_value","std_dev","sync_success_rate"];
 /** ref column -> the parent it names, and what a rollup may group by over there. */
-const HOPS: Record<string, { table: string; cols: string[] }> = {"region_id":{"table":"regions","cols":["is_active","manager_id"]}};
+const HOPS: Record<string, { table: string; cols: string[] }> = {"zone_id":{"table":"connectivity_zones","cols":["last_updated","status"]}};
 const GROUPINGS: string[] = [...GROUPABLE, ...Object.entries(HOPS).flatMap(([r, h]) => h.cols.map((c) => r + "." + c))];
 
 /** The tenant + live + filter WHERE for this entity, or a message to 400 with. */
@@ -80,6 +80,15 @@ function scope(url: URL, tenant: string): { where: string; args: unknown[] } | s
   return { where, args };
 }
 
+export const siteSyncStats: SiteSyncStatsHandler = async (req, env, params) => {
+  const user = await requireSession(req, env);
+  if (!user) return json({ error: "unauthenticated" }, 401);
+  noteTenant(req, user.tenant);
+  void params;
+  const { results } = await env.DB.prepare("SELECT s.id, s.name, COUNT(r.id) as total_readings, SUM(CASE WHEN r.sync_status = 'synced' THEN 1 ELSE 0 END) as synced_readings, SUM(CASE WHEN r.sync_status = 'failed' THEN 1 ELSE 0 END) as failed_readings FROM sites s LEFT JOIN readings r ON s.id = r.site_id WHERE s.id = ? AND s.tenant = ? AND s.deleted_at IS NULL GROUP BY s.id").bind(params.id, user.tenant).all<Row>();
+  return json(results);
+};
+
 export const listSites: ListSitesHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
@@ -93,7 +102,7 @@ export const listSites: ListSitesHandler = async (req, env) => {
   const sc = scope(url, user.tenant);
   if (typeof sc === "string") return json({ error: sc }, 400);
   const { where, args } = sc;
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(latitude), 0) AS s_latitude, COALESCE(SUM(longitude), 0) AS s_longitude, COALESCE(SUM(maintenance_frequency_days), 0) AS s_maintenance_frequency_days FROM sites WHERE " + where).bind(...args).first<Record<string, number>>();
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(latitude), 0) AS s_latitude, COALESCE(SUM(longitude), 0) AS s_longitude, COALESCE(SUM(mean_value), 0) AS s_mean_value, COALESCE(SUM(std_dev), 0) AS s_std_dev, COALESCE(SUM(sync_success_rate), 0) AS s_sync_success_rate FROM sites WHERE " + where).bind(...args).first<Record<string, number>>();
   let pageWhere = where;
   const pageArgs = [...args];
   const cursor = Math.trunc(Number(url.searchParams.get("cursor")));
@@ -108,7 +117,7 @@ export const listSites: ListSitesHandler = async (req, env) => {
   out.headers.set("x-total-count", String(counted?.n ?? results.length));
   const last = results[results.length - 1];
   if (sort === "id" && last && results.length === per) out.headers.set("x-next-cursor", String(last.id));
-  if (counted) out.headers.set("x-totals", JSON.stringify({ latitude: counted.s_latitude ?? 0, longitude: counted.s_longitude ?? 0, maintenance_frequency_days: counted.s_maintenance_frequency_days ?? 0 }));
+  if (counted) out.headers.set("x-totals", JSON.stringify({ latitude: counted.s_latitude ?? 0, longitude: counted.s_longitude ?? 0, mean_value: counted.s_mean_value ?? 0, std_dev: counted.s_std_dev ?? 0, sync_success_rate: counted.s_sync_success_rate ?? 0 }));
   return out;
 };
 
@@ -177,7 +186,7 @@ export const createSite: CreateSiteHandler = async (req, env) => {
     }
   }
   try {
-    const res = await env.DB.prepare("INSERT INTO sites (name, latitude, longitude, description, is_active, site_type, region_id, status, installation_date, last_inspection_date, maintenance_frequency_days, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.name ?? null, body.latitude ?? null, body.longitude ?? null, body.description ?? null, body.is_active ?? null, body.site_type ?? null, body.region_id ?? null, body.status ?? null, body.installation_date ?? null, body.last_inspection_date ?? null, body.maintenance_frequency_days ?? null, user.tenant).run();
+    const res = await env.DB.prepare("INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.name ?? null, body.latitude ?? null, body.longitude ?? null, body.mean_value ?? null, body.std_dev ?? null, body.last_sync ?? null, body.sync_success_rate ?? null, body.technician_email ?? null, body.status ?? null, body.zone_id ?? null, user.tenant).run();
     const row = await env.DB.prepare("SELECT * FROM sites WHERE id = ?").bind(res.meta.last_row_id).first<Site>();
     if (key)
       await env.DB.prepare("INSERT OR IGNORE INTO idempotency (tenant, key, endpoint, row_id, at) VALUES (?, ?, ?, ?, ?)")
@@ -207,9 +216,9 @@ export const createSiteBulk: CreateSiteBulkHandler = async (req, env) => {
     if (bad) return json({ error: "row " + i + ": " + bad }, 400);
   }
   try {
-    const stmt = env.DB.prepare("INSERT INTO sites (name, latitude, longitude, description, is_active, site_type, region_id, status, installation_date, last_inspection_date, maintenance_frequency_days, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
+    const stmt = env.DB.prepare("INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
     const out = await env.DB.batch<{ id: number }>(
-      rows.map((body) => stmt.bind(body.name ?? null, body.latitude ?? null, body.longitude ?? null, body.description ?? null, body.is_active ?? null, body.site_type ?? null, body.region_id ?? null, body.status ?? null, body.installation_date ?? null, body.last_inspection_date ?? null, body.maintenance_frequency_days ?? null, user.tenant)),
+      rows.map((body) => stmt.bind(body.name ?? null, body.latitude ?? null, body.longitude ?? null, body.mean_value ?? null, body.std_dev ?? null, body.last_sync ?? null, body.sync_success_rate ?? null, body.technician_email ?? null, body.status ?? null, body.zone_id ?? null, user.tenant)),
     );
     const ids = out.flatMap((r) => (r.results ?? []).map((x) => x.id));
     for (const id of ids) await audit(env, user, "create", "site", id, null);
@@ -242,8 +251,8 @@ export const updateSite: UpdateSiteHandler = async (req, env, params) => {
   const tag = (req.headers.get("if-match") ?? new URL(req.url).searchParams.get("if_match") ?? "").replace(/^W\//, "").replace(/"/g, "").trim();
   const want = tag ? Math.trunc(Number(tag)) : NaN;
   if (tag && !Number.isInteger(want)) return json({ error: "if-match must be a version number" }, 400);
-  let sql = "UPDATE sites SET name = COALESCE(?, name), latitude = COALESCE(?, latitude), longitude = COALESCE(?, longitude), description = COALESCE(?, description), is_active = COALESCE(?, is_active), site_type = COALESCE(?, site_type), region_id = COALESCE(?, region_id), status = COALESCE(?, status), installation_date = COALESCE(?, installation_date), last_inspection_date = COALESCE(?, last_inspection_date), maintenance_frequency_days = COALESCE(?, maintenance_frequency_days), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
-  const args: unknown[] = [body.name ?? null, body.latitude ?? null, body.longitude ?? null, body.description ?? null, body.is_active ?? null, body.site_type ?? null, body.region_id ?? null, body.status ?? null, body.installation_date ?? null, body.last_inspection_date ?? null, body.maintenance_frequency_days ?? null, params.id, user.tenant];
+  let sql = "UPDATE sites SET name = COALESCE(?, name), latitude = COALESCE(?, latitude), longitude = COALESCE(?, longitude), mean_value = COALESCE(?, mean_value), std_dev = COALESCE(?, std_dev), last_sync = COALESCE(?, last_sync), sync_success_rate = COALESCE(?, sync_success_rate), technician_email = COALESCE(?, technician_email), status = COALESCE(?, status), zone_id = COALESCE(?, zone_id), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
+  const args: unknown[] = [body.name ?? null, body.latitude ?? null, body.longitude ?? null, body.mean_value ?? null, body.std_dev ?? null, body.last_sync ?? null, body.sync_success_rate ?? null, body.technician_email ?? null, body.status ?? null, body.zone_id ?? null, params.id, user.tenant];
   if (Number.isInteger(want)) { sql += " AND row_version = ?"; args.push(want); }
   try {
     const res = await env.DB.prepare(sql).bind(...args).run();

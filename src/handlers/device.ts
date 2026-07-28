@@ -1,7 +1,7 @@
 // GENERATED from the manifest. Do not edit.
 import { json, noteTenant, readJson, requestId } from "../lib/http";
 import { ADMIN_ROLES, audit, requireRole, requireSession, WRITE_ROLES } from "./auth";
-import type { Device, Bucket, ListDevicesHandler, ListDevicesStatsHandler, GetDeviceHandler, CreateDeviceHandler, CreateDeviceBulkHandler, UpdateDeviceHandler, DeleteDeviceHandler } from "../types";
+import type { Device, Row, Bucket, LowBatteryDevicesHandler, ListDevicesHandler, ListDevicesStatsHandler, GetDeviceHandler, CreateDeviceHandler, CreateDeviceBulkHandler, UpdateDeviceHandler, DeleteDeviceHandler } from "../types";
 
 function constraintError(err: unknown): string | null {
   const msg = err instanceof Error ? err.message : String(err);
@@ -14,7 +14,7 @@ function constraintError(err: unknown): string | null {
 }
 
 type Spec = { name: string; type: "text" | "integer" | "real" | "date" | "bool" | "enum"; values?: string[] };
-const FIELDS: Spec[] = [{ name: "fingerprint", type: "text" }, { name: "user_agent", type: "text" }, { name: "screen_width", type: "integer" }, { name: "screen_height", type: "integer" }, { name: "hardware_concurrency", type: "integer" }, { name: "last_seen", type: "date" }, { name: "status", type: "enum", values: ["active","inactive","lost"] }, { name: "technician_id", type: "integer" }, { name: "os_version", type: "text" }, { name: "battery_level", type: "integer" }, { name: "storage_available_mb", type: "integer" }];
+const FIELDS: Spec[] = [{ name: "user_agent", type: "text" }, { name: "screen_width", type: "integer" }, { name: "screen_height", type: "integer" }, { name: "hardware_concurrency", type: "integer" }, { name: "last_seen", type: "date" }, { name: "technician_email", type: "text" }, { name: "status", type: "enum", values: ["active","lost","retired"] }, { name: "battery_level", type: "integer" }];
 function validate(body: Partial<Device>, partial = false): string | null {
   const b = body as Record<string, unknown>;
   for (const { name, type, values } of FIELDS) {
@@ -33,17 +33,17 @@ function validate(body: Partial<Device>, partial = false): string | null {
   return null;
 }
 
-const WORKFLOW: Record<string, string[]> = {"active":["inactive","lost"],"inactive":["active","lost"],"lost":[]};
+const WORKFLOW: Record<string, string[]> = {"active":["lost","retired"],"lost":["active","retired"],"retired":[]};
 
-const SORTABLE: string[] = ["id","fingerprint","user_agent","screen_width","screen_height","hardware_concurrency","last_seen","status","technician_id","os_version","battery_level","storage_available_mb"];
-const SEARCHABLE: string[] = ["fingerprint","user_agent","last_seen","status","os_version"];
-const FILTERABLE: string[] = ["technician_id"];
+const SORTABLE: string[] = ["id","user_agent","screen_width","screen_height","hardware_concurrency","last_seen","technician_email","status","battery_level"];
+const SEARCHABLE: string[] = ["user_agent","last_seen","technician_email","status"];
+const FILTERABLE: string[] = [];
 const MATCHABLE: string[] = ["status"];
 const DATED: string[] = ["last_seen"];
-const GROUPABLE: string[] = ["last_seen","status","technician_id"];
-const MEASURABLE: string[] = ["screen_width","screen_height","hardware_concurrency","battery_level","storage_available_mb"];
+const GROUPABLE: string[] = ["last_seen","status"];
+const MEASURABLE: string[] = ["screen_width","screen_height","hardware_concurrency","battery_level"];
 /** ref column -> the parent it names, and what a rollup may group by over there. */
-const HOPS: Record<string, { table: string; cols: string[] }> = {"technician_id":{"table":"technicians","cols":["last_active","is_active","status","hire_date","supervisor_id","certification_level"]}};
+const HOPS: Record<string, { table: string; cols: string[] }> = {};
 const GROUPINGS: string[] = [...GROUPABLE, ...Object.entries(HOPS).flatMap(([r, h]) => h.cols.map((c) => r + "." + c))];
 
 /** The tenant + live + filter WHERE for this entity, or a message to 400 with. */
@@ -80,6 +80,15 @@ function scope(url: URL, tenant: string): { where: string; args: unknown[] } | s
   return { where, args };
 }
 
+export const lowBatteryDevices: LowBatteryDevicesHandler = async (req, env, params) => {
+  const user = await requireSession(req, env);
+  if (!user) return json({ error: "unauthenticated" }, 401);
+  noteTenant(req, user.tenant);
+  void params;
+  const { results } = await env.DB.prepare("SELECT * FROM devices WHERE battery_level < 20 AND status = 'active' AND tenant = ? AND deleted_at IS NULL").bind(user.tenant).all<Row>();
+  return json(results);
+};
+
 export const listDevices: ListDevicesHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
@@ -93,7 +102,7 @@ export const listDevices: ListDevicesHandler = async (req, env) => {
   const sc = scope(url, user.tenant);
   if (typeof sc === "string") return json({ error: sc }, 400);
   const { where, args } = sc;
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(screen_width), 0) AS s_screen_width, COALESCE(SUM(screen_height), 0) AS s_screen_height, COALESCE(SUM(hardware_concurrency), 0) AS s_hardware_concurrency, COALESCE(SUM(battery_level), 0) AS s_battery_level, COALESCE(SUM(storage_available_mb), 0) AS s_storage_available_mb FROM devices WHERE " + where).bind(...args).first<Record<string, number>>();
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(screen_width), 0) AS s_screen_width, COALESCE(SUM(screen_height), 0) AS s_screen_height, COALESCE(SUM(hardware_concurrency), 0) AS s_hardware_concurrency, COALESCE(SUM(battery_level), 0) AS s_battery_level FROM devices WHERE " + where).bind(...args).first<Record<string, number>>();
   let pageWhere = where;
   const pageArgs = [...args];
   const cursor = Math.trunc(Number(url.searchParams.get("cursor")));
@@ -108,7 +117,7 @@ export const listDevices: ListDevicesHandler = async (req, env) => {
   out.headers.set("x-total-count", String(counted?.n ?? results.length));
   const last = results[results.length - 1];
   if (sort === "id" && last && results.length === per) out.headers.set("x-next-cursor", String(last.id));
-  if (counted) out.headers.set("x-totals", JSON.stringify({ screen_width: counted.s_screen_width ?? 0, screen_height: counted.s_screen_height ?? 0, hardware_concurrency: counted.s_hardware_concurrency ?? 0, battery_level: counted.s_battery_level ?? 0, storage_available_mb: counted.s_storage_available_mb ?? 0 }));
+  if (counted) out.headers.set("x-totals", JSON.stringify({ screen_width: counted.s_screen_width ?? 0, screen_height: counted.s_screen_height ?? 0, hardware_concurrency: counted.s_hardware_concurrency ?? 0, battery_level: counted.s_battery_level ?? 0 }));
   return out;
 };
 
@@ -177,7 +186,7 @@ export const createDevice: CreateDeviceHandler = async (req, env) => {
     }
   }
   try {
-    const res = await env.DB.prepare("INSERT INTO devices (fingerprint, user_agent, screen_width, screen_height, hardware_concurrency, last_seen, status, technician_id, os_version, battery_level, storage_available_mb, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.fingerprint ?? null, body.user_agent ?? null, body.screen_width ?? null, body.screen_height ?? null, body.hardware_concurrency ?? null, body.last_seen ?? null, body.status ?? null, body.technician_id ?? null, body.os_version ?? null, body.battery_level ?? null, body.storage_available_mb ?? null, user.tenant).run();
+    const res = await env.DB.prepare("INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.user_agent ?? null, body.screen_width ?? null, body.screen_height ?? null, body.hardware_concurrency ?? null, body.last_seen ?? null, body.technician_email ?? null, body.status ?? null, body.battery_level ?? null, user.tenant).run();
     const row = await env.DB.prepare("SELECT * FROM devices WHERE id = ?").bind(res.meta.last_row_id).first<Device>();
     if (key)
       await env.DB.prepare("INSERT OR IGNORE INTO idempotency (tenant, key, endpoint, row_id, at) VALUES (?, ?, ?, ?, ?)")
@@ -207,9 +216,9 @@ export const createDeviceBulk: CreateDeviceBulkHandler = async (req, env) => {
     if (bad) return json({ error: "row " + i + ": " + bad }, 400);
   }
   try {
-    const stmt = env.DB.prepare("INSERT INTO devices (fingerprint, user_agent, screen_width, screen_height, hardware_concurrency, last_seen, status, technician_id, os_version, battery_level, storage_available_mb, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
+    const stmt = env.DB.prepare("INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
     const out = await env.DB.batch<{ id: number }>(
-      rows.map((body) => stmt.bind(body.fingerprint ?? null, body.user_agent ?? null, body.screen_width ?? null, body.screen_height ?? null, body.hardware_concurrency ?? null, body.last_seen ?? null, body.status ?? null, body.technician_id ?? null, body.os_version ?? null, body.battery_level ?? null, body.storage_available_mb ?? null, user.tenant)),
+      rows.map((body) => stmt.bind(body.user_agent ?? null, body.screen_width ?? null, body.screen_height ?? null, body.hardware_concurrency ?? null, body.last_seen ?? null, body.technician_email ?? null, body.status ?? null, body.battery_level ?? null, user.tenant)),
     );
     const ids = out.flatMap((r) => (r.results ?? []).map((x) => x.id));
     for (const id of ids) await audit(env, user, "create", "device", id, null);
@@ -242,8 +251,8 @@ export const updateDevice: UpdateDeviceHandler = async (req, env, params) => {
   const tag = (req.headers.get("if-match") ?? new URL(req.url).searchParams.get("if_match") ?? "").replace(/^W\//, "").replace(/"/g, "").trim();
   const want = tag ? Math.trunc(Number(tag)) : NaN;
   if (tag && !Number.isInteger(want)) return json({ error: "if-match must be a version number" }, 400);
-  let sql = "UPDATE devices SET fingerprint = COALESCE(?, fingerprint), user_agent = COALESCE(?, user_agent), screen_width = COALESCE(?, screen_width), screen_height = COALESCE(?, screen_height), hardware_concurrency = COALESCE(?, hardware_concurrency), last_seen = COALESCE(?, last_seen), status = COALESCE(?, status), technician_id = COALESCE(?, technician_id), os_version = COALESCE(?, os_version), battery_level = COALESCE(?, battery_level), storage_available_mb = COALESCE(?, storage_available_mb), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
-  const args: unknown[] = [body.fingerprint ?? null, body.user_agent ?? null, body.screen_width ?? null, body.screen_height ?? null, body.hardware_concurrency ?? null, body.last_seen ?? null, body.status ?? null, body.technician_id ?? null, body.os_version ?? null, body.battery_level ?? null, body.storage_available_mb ?? null, params.id, user.tenant];
+  let sql = "UPDATE devices SET user_agent = COALESCE(?, user_agent), screen_width = COALESCE(?, screen_width), screen_height = COALESCE(?, screen_height), hardware_concurrency = COALESCE(?, hardware_concurrency), last_seen = COALESCE(?, last_seen), technician_email = COALESCE(?, technician_email), status = COALESCE(?, status), battery_level = COALESCE(?, battery_level), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
+  const args: unknown[] = [body.user_agent ?? null, body.screen_width ?? null, body.screen_height ?? null, body.hardware_concurrency ?? null, body.last_seen ?? null, body.technician_email ?? null, body.status ?? null, body.battery_level ?? null, params.id, user.tenant];
   if (Number.isInteger(want)) { sql += " AND row_version = ?"; args.push(want); }
   try {
     const res = await env.DB.prepare(sql).bind(...args).run();

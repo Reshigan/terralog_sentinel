@@ -14,7 +14,7 @@ function constraintError(err: unknown): string | null {
 }
 
 type Spec = { name: string; type: "text" | "integer" | "real" | "date" | "bool" | "enum"; values?: string[] };
-const FIELDS: Spec[] = [{ name: "reading_id", type: "integer" }, { name: "attempt_timestamp", type: "date" }, { name: "status", type: "enum", values: ["success","failure"] }, { name: "http_status", type: "integer" }, { name: "error_message", type: "text" }, { name: "retry_count", type: "integer" }, { name: "sync_session_id", type: "integer" }, { name: "bytes_transferred", type: "integer" }, { name: "duration_ms", type: "integer" }, { name: "endpoint_url", type: "text" }];
+const FIELDS: Spec[] = [{ name: "reading_id", type: "integer" }, { name: "attempted_at", type: "date" }, { name: "status", type: "enum", values: ["success","failure","retry"] }, { name: "response_code", type: "integer" }, { name: "error_message", type: "text" }, { name: "sync_policy_id", type: "integer" }];
 function validate(body: Partial<Sync_log>, partial = false): string | null {
   const b = body as Record<string, unknown>;
   for (const { name, type, values } of FIELDS) {
@@ -33,15 +33,15 @@ function validate(body: Partial<Sync_log>, partial = false): string | null {
   return null;
 }
 
-const SORTABLE: string[] = ["id","reading_id","attempt_timestamp","status","http_status","error_message","retry_count","sync_session_id","bytes_transferred","duration_ms","endpoint_url"];
-const SEARCHABLE: string[] = ["attempt_timestamp","status","error_message","endpoint_url"];
-const FILTERABLE: string[] = ["reading_id","sync_session_id"];
+const SORTABLE: string[] = ["id","reading_id","attempted_at","status","response_code","error_message","sync_policy_id"];
+const SEARCHABLE: string[] = ["attempted_at","status","error_message"];
+const FILTERABLE: string[] = ["reading_id","sync_policy_id"];
 const MATCHABLE: string[] = ["status"];
-const DATED: string[] = ["attempt_timestamp"];
-const GROUPABLE: string[] = ["reading_id","attempt_timestamp","status","sync_session_id"];
-const MEASURABLE: string[] = ["http_status","retry_count","bytes_transferred","duration_ms"];
+const DATED: string[] = ["attempted_at"];
+const GROUPABLE: string[] = ["reading_id","attempted_at","status","sync_policy_id"];
+const MEASURABLE: string[] = ["response_code"];
 /** ref column -> the parent it names, and what a rollup may group by over there. */
-const HOPS: Record<string, { table: string; cols: string[] }> = {"reading_id":{"table":"readings","cols":["capture_timestamp","sync_status","erasure_policy_id","reading_type_id","site_id","technician_id"]},"sync_session_id":{"table":"sync_sessions","cols":["started_at","ended_at","status","technician_id","device_id","sync_policy_id","network_type"]}};
+const HOPS: Record<string, { table: string; cols: string[] }> = {"reading_id":{"table":"readings","cols":["timestamp","sync_status","site_id","device_id","equipment_id","calibration_id"]},"sync_policy_id":{"table":"sync_policys","cols":["is_active","created_at","updated_at","zone_id"]}};
 const GROUPINGS: string[] = [...GROUPABLE, ...Object.entries(HOPS).flatMap(([r, h]) => h.cols.map((c) => r + "." + c))];
 
 /** The tenant + live + filter WHERE for this entity, or a message to 400 with. */
@@ -91,7 +91,7 @@ export const listSync_logs: ListSync_logsHandler = async (req, env) => {
   const sc = scope(url, user.tenant);
   if (typeof sc === "string") return json({ error: sc }, 400);
   const { where, args } = sc;
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(http_status), 0) AS s_http_status, COALESCE(SUM(retry_count), 0) AS s_retry_count, COALESCE(SUM(bytes_transferred), 0) AS s_bytes_transferred, COALESCE(SUM(duration_ms), 0) AS s_duration_ms FROM sync_logs WHERE " + where).bind(...args).first<Record<string, number>>();
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(response_code), 0) AS s_response_code FROM sync_logs WHERE " + where).bind(...args).first<Record<string, number>>();
   let pageWhere = where;
   const pageArgs = [...args];
   const cursor = Math.trunc(Number(url.searchParams.get("cursor")));
@@ -106,7 +106,7 @@ export const listSync_logs: ListSync_logsHandler = async (req, env) => {
   out.headers.set("x-total-count", String(counted?.n ?? results.length));
   const last = results[results.length - 1];
   if (sort === "id" && last && results.length === per) out.headers.set("x-next-cursor", String(last.id));
-  if (counted) out.headers.set("x-totals", JSON.stringify({ http_status: counted.s_http_status ?? 0, retry_count: counted.s_retry_count ?? 0, bytes_transferred: counted.s_bytes_transferred ?? 0, duration_ms: counted.s_duration_ms ?? 0 }));
+  if (counted) out.headers.set("x-totals", JSON.stringify({ response_code: counted.s_response_code ?? 0 }));
   return out;
 };
 
@@ -175,7 +175,7 @@ export const createSync_log: CreateSync_logHandler = async (req, env) => {
     }
   }
   try {
-    const res = await env.DB.prepare("INSERT INTO sync_logs (reading_id, attempt_timestamp, status, http_status, error_message, retry_count, sync_session_id, bytes_transferred, duration_ms, endpoint_url, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.reading_id ?? null, body.attempt_timestamp ?? null, body.status ?? null, body.http_status ?? null, body.error_message ?? null, body.retry_count ?? null, body.sync_session_id ?? null, body.bytes_transferred ?? null, body.duration_ms ?? null, body.endpoint_url ?? null, user.tenant).run();
+    const res = await env.DB.prepare("INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(body.reading_id ?? null, body.attempted_at ?? null, body.status ?? null, body.response_code ?? null, body.error_message ?? null, body.sync_policy_id ?? null, user.tenant).run();
     const row = await env.DB.prepare("SELECT * FROM sync_logs WHERE id = ?").bind(res.meta.last_row_id).first<Sync_log>();
     if (key)
       await env.DB.prepare("INSERT OR IGNORE INTO idempotency (tenant, key, endpoint, row_id, at) VALUES (?, ?, ?, ?, ?)")
@@ -205,9 +205,9 @@ export const createSync_logBulk: CreateSync_logBulkHandler = async (req, env) =>
     if (bad) return json({ error: "row " + i + ": " + bad }, 400);
   }
   try {
-    const stmt = env.DB.prepare("INSERT INTO sync_logs (reading_id, attempt_timestamp, status, http_status, error_message, retry_count, sync_session_id, bytes_transferred, duration_ms, endpoint_url, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
+    const stmt = env.DB.prepare("INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id");
     const out = await env.DB.batch<{ id: number }>(
-      rows.map((body) => stmt.bind(body.reading_id ?? null, body.attempt_timestamp ?? null, body.status ?? null, body.http_status ?? null, body.error_message ?? null, body.retry_count ?? null, body.sync_session_id ?? null, body.bytes_transferred ?? null, body.duration_ms ?? null, body.endpoint_url ?? null, user.tenant)),
+      rows.map((body) => stmt.bind(body.reading_id ?? null, body.attempted_at ?? null, body.status ?? null, body.response_code ?? null, body.error_message ?? null, body.sync_policy_id ?? null, user.tenant)),
     );
     const ids = out.flatMap((r) => (r.results ?? []).map((x) => x.id));
     for (const id of ids) await audit(env, user, "create", "sync_log", id, null);
@@ -232,8 +232,8 @@ export const updateSync_log: UpdateSync_logHandler = async (req, env, params) =>
   const tag = (req.headers.get("if-match") ?? new URL(req.url).searchParams.get("if_match") ?? "").replace(/^W\//, "").replace(/"/g, "").trim();
   const want = tag ? Math.trunc(Number(tag)) : NaN;
   if (tag && !Number.isInteger(want)) return json({ error: "if-match must be a version number" }, 400);
-  let sql = "UPDATE sync_logs SET reading_id = COALESCE(?, reading_id), attempt_timestamp = COALESCE(?, attempt_timestamp), status = COALESCE(?, status), http_status = COALESCE(?, http_status), error_message = COALESCE(?, error_message), retry_count = COALESCE(?, retry_count), sync_session_id = COALESCE(?, sync_session_id), bytes_transferred = COALESCE(?, bytes_transferred), duration_ms = COALESCE(?, duration_ms), endpoint_url = COALESCE(?, endpoint_url), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
-  const args: unknown[] = [body.reading_id ?? null, body.attempt_timestamp ?? null, body.status ?? null, body.http_status ?? null, body.error_message ?? null, body.retry_count ?? null, body.sync_session_id ?? null, body.bytes_transferred ?? null, body.duration_ms ?? null, body.endpoint_url ?? null, params.id, user.tenant];
+  let sql = "UPDATE sync_logs SET reading_id = COALESCE(?, reading_id), attempted_at = COALESCE(?, attempted_at), status = COALESCE(?, status), response_code = COALESCE(?, response_code), error_message = COALESCE(?, error_message), sync_policy_id = COALESCE(?, sync_policy_id), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
+  const args: unknown[] = [body.reading_id ?? null, body.attempted_at ?? null, body.status ?? null, body.response_code ?? null, body.error_message ?? null, body.sync_policy_id ?? null, params.id, user.tenant];
   if (Number.isInteger(want)) { sql += " AND row_version = ?"; args.push(want); }
   try {
     const res = await env.DB.prepare(sql).bind(...args).run();

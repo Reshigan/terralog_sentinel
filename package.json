@@ -2,10 +2,13 @@
   "name": "terminus-ui-offline-first-pwa-for-resh-c",
   "private": true,
   "scripts": {
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "test": "bun test",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "wrangler": "^4.0.0"
+    "wrangler": "^4.0.0",
+    "typescript": "^5.0.0"
   }
 }

@@ -1,7 +1,7 @@
 // GENERATED from the manifest. Do not edit.
 import { json, noteTenant, readJson, requestId } from "../lib/http";
 import { ADMIN_ROLES, audit, requireRole, requireSession, WRITE_ROLES } from "./auth";
-import type { Maintenance_schedule, Bucket, ListMaintenance_schedulesHandler, ListMaintenance_schedulesStatsHandler, GetMaintenance_scheduleHandler, CreateMaintenance_scheduleHandler, CreateMaintenance_scheduleBulkHandler, UpdateMaintenance_scheduleHandler, DeleteMaintenance_scheduleHandler } from "../types";
+import type { Maintenance_schedule, Row, Bucket, OverdueMaintenanceHandler, ListMaintenance_schedulesHandler, ListMaintenance_schedulesStatsHandler, GetMaintenance_scheduleHandler, CreateMaintenance_scheduleHandler, CreateMaintenance_scheduleBulkHandler, UpdateMaintenance_scheduleHandler, DeleteMaintenance_scheduleHandler } from "../types";
 
 function constraintError(err: unknown): string | null {
   const msg = err instanceof Error ? err.message : String(err);
@@ -14,7 +14,7 @@ function constraintError(err: unknown): string | null {
 }
 
 type Spec = { name: string; type: "text" | "integer" | "real" | "date" | "bool" | "enum"; values?: string[] };
-const FIELDS: Spec[] = [{ name: "site_id", type: "integer" }, { name: "scheduled_date", type: "date" }, { name: "description", type: "text" }, { name: "status", type: "enum", values: ["planned","in_progress","completed","cancelled"] }, { name: "technician_id", type: "integer" }, { name: "completed_at", type: "date" }, { name: "priority", type: "enum", values: ["low","medium","high","critical"] }, { name: "estimated_duration_hours", type: "integer" }, { name: "actual_duration_hours", type: "integer" }, { name: "notes", type: "text" }];
+const FIELDS: Spec[] = [{ name: "equipment_id", type: "integer" }, { name: "scheduled_date", type: "date" }, { name: "type", type: "enum", values: ["preventive","corrective","calibration"] }, { name: "status", type: "enum", values: ["planned","completed","cancelled"] }, { name: "notes", type: "text" }, { name: "technician_email", type: "text" }];
 function validate(body: Partial<Maintenance_schedule>, partial = false): string | null {
   const b = body as Record<string, unknown>;
   for (const { name, type, values } of FIELDS) {
@@ -33,17 +33,17 @@ function validate(body: Partial<Maintenance_schedule>, partial = false): string 
   return null;
 }
 
-const WORKFLOW: Record<string, string[]> = {"planned":["in_progress","cancelled"],"in_progress":["completed","cancelled"],"completed":[],"cancelled":[]};
+const WORKFLOW: Record<string, string[]> = {"planned":["completed","cancelled"],"completed":[],"cancelled":["planned"]};
 
-const SORTABLE: string[] = ["id","site_id","scheduled_date","description","status","technician_id","completed_at","priority","estimated_duration_hours","actual_duration_hours","notes"];
-const SEARCHABLE: string[] = ["scheduled_date","description","status","completed_at","priority","notes"];
-const FILTERABLE: string[] = ["site_id","technician_id"];
-const MATCHABLE: string[] = ["status","priority"];
-const DATED: string[] = ["scheduled_date","completed_at"];
-const GROUPABLE: string[] = ["site_id","scheduled_date","status","technician_id","completed_at","priority"];
-const MEASURABLE: string[] = ["estimated_duration_hours","actual_duration_hours"];
+const SORTABLE: string[] = ["id","equipment_id","scheduled_date","type","status","notes","technician_email"];
+const SEARCHABLE: string[] = ["scheduled_date","type","status","notes","technician_email"];
+const FILTERABLE: string[] = ["equipment_id"];
+const MATCHABLE: string[] = ["type","status"];
+const DATED: string[] = ["scheduled_date"];
+const GROUPABLE: string[] = ["equipment_id","scheduled_date","type","status"];
+const MEASURABLE: string[] = [];
 /** ref column -> the parent it names, and what a rollup may group by over there. */
-const HOPS: Record<string, { table: string; cols: string[] }> = {"site_id":{"table":"sites","cols":["is_active","site_type","region_id","status","installation_date","last_inspection_date"]},"technician_id":{"table":"technicians","cols":["last_active","is_active","status","hire_date","supervisor_id","certification_level"]}};
+const HOPS: Record<string, { table: string; cols: string[] }> = {"equipment_id":{"table":"equipments","cols":["type","installation_date","last_calibration","site_id","status","warranty_expiry"]}};
 const GROUPINGS: string[] = [...GROUPABLE, ...Object.entries(HOPS).flatMap(([r, h]) => h.cols.map((c) => r + "." + c))];
 
 /** The tenant + live + filter WHERE for this entity, or a message to 400 with. */
@@ -80,6 +80,15 @@ function scope(url: URL, tenant: string): { where: string; args: unknown[] } | s
   return { where, args };
 }
 
+export const overdueMaintenance: OverdueMaintenanceHandler = async (req, env, params) => {
+  const user = await requireSession(req, env);
+  if (!user) return json({ error: "unauthenticated" }, 401);
+  noteTenant(req, user.tenant);
+  void params;
+  const { results } = await env.DB.prepare("SELECT e.serial_number, m.scheduled_date, m.type FROM equipment e JOIN maintenance_schedule m ON e.id = m.equipment_id WHERE m.status = 'planned' AND m.scheduled_date < DATE('now') AND e.tenant = ? AND e.deleted_at IS NULL AND m.deleted_at IS NULL").bind(user.tenant).all<Row>();
+  return json(results);
+};
+
 export const listMaintenance_schedules: ListMaintenance_schedulesHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
@@ -93,7 +102,7 @@ export const listMaintenance_schedules: ListMaintenance_schedulesHandler = async
   const sc = scope(url, user.tenant);
   if (typeof sc === "string") return json({ error: sc }, 400);
   const { where, args } = sc;
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(estimated_duration_hours), 0) AS s_estimated_duration_hours, COALESCE(SUM(actual_duration_hours), 0) AS s_actual_duration_hours FROM maintenance_schedules WHERE " + where).bind(...args).first<Record<string, number>>();
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM maintenance_schedules WHERE " + where).bind(...args).first<Record<string, number>>();
   let pageWhere = where;
   const pageArgs = [...args];
   const cursor = Math.trunc(Number(url.searchParams.get("cursor")));
@@ -108,7 +117,6 @@ export const listMaintenance_schedules: ListMaintenance_schedulesHandler = async
   out.headers.set("x-total-count", String(counted?.n ?? results.length));
   const last = results[results.length - 1];
   if (sort === "id" && last && results.length === per) out.headers.set("x-next-cursor", String(last.id));
-  if (counted) out.headers.set("x-totals", JSON.stringify({ estimated_duration_hours: counted.s_estimated_duration_hours ?? 0, actual_duration_hours: counted.s_actual_duration_hours ?? 0 }));
   return out;
 };
 
@@ -177,7 +185,7 @@ export const createMaintenance_schedule: CreateMaintenance_scheduleHandler = asy
     }
   }
   try {
-    const res = await env.DB.prepare("INSERT INTO maintenance_schedules (site_id, scheduled_date, description, status, technician_id, completed_at, priority, estimated_duration_hours, actual_duration_hours, notes, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.site_id ?? null, body.scheduled_date ?? null, body.description ?? null, body.status ?? null, body.technician_id ?? null, body.completed_at ?? null, body.priority ?? null, body.estimated_duration_hours ?? null, body.actual_duration_hours ?? null, body.notes ?? null, user.tenant).run();
+    const res = await env.DB.prepare("INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email, tenant) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(body.equipment_id ?? null, body.scheduled_date ?? null, body.type ?? null, body.status ?? null, body.notes ?? null, body.technician_email ?? null, user.tenant).run();
     const row = await env.DB.prepare("SELECT * FROM maintenance_schedules WHERE id = ?").bind(res.meta.last_row_id).first<Maintenance_schedule>();
     if (key)
       await env.DB.prepare("INSERT OR IGNORE INTO idempotency (tenant, key, endpoint, row_id, at) VALUES (?, ?, ?, ?, ?)")
@@ -207,9 +215,9 @@ export const createMaintenance_scheduleBulk: CreateMaintenance_scheduleBulkHandl
     if (bad) return json({ error: "row " + i + ": " + bad }, 400);
   }
   try {
-    const stmt = env.DB.prepare("INSERT INTO maintenance_schedules (site_id, scheduled_date, description, status, technician_id, completed_at, priority, estimated_duration_hours, actual_duration_hours, notes, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
+    const stmt = env.DB.prepare("INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email, tenant) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id");
     const out = await env.DB.batch<{ id: number }>(
-      rows.map((body) => stmt.bind(body.site_id ?? null, body.scheduled_date ?? null, body.description ?? null, body.status ?? null, body.technician_id ?? null, body.completed_at ?? null, body.priority ?? null, body.estimated_duration_hours ?? null, body.actual_duration_hours ?? null, body.notes ?? null, user.tenant)),
+      rows.map((body) => stmt.bind(body.equipment_id ?? null, body.scheduled_date ?? null, body.type ?? null, body.status ?? null, body.notes ?? null, body.technician_email ?? null, user.tenant)),
     );
     const ids = out.flatMap((r) => (r.results ?? []).map((x) => x.id));
     for (const id of ids) await audit(env, user, "create", "maintenance_schedule", id, null);
@@ -242,8 +250,8 @@ export const updateMaintenance_schedule: UpdateMaintenance_scheduleHandler = asy
   const tag = (req.headers.get("if-match") ?? new URL(req.url).searchParams.get("if_match") ?? "").replace(/^W\//, "").replace(/"/g, "").trim();
   const want = tag ? Math.trunc(Number(tag)) : NaN;
   if (tag && !Number.isInteger(want)) return json({ error: "if-match must be a version number" }, 400);
-  let sql = "UPDATE maintenance_schedules SET site_id = COALESCE(?, site_id), scheduled_date = COALESCE(?, scheduled_date), description = COALESCE(?, description), status = COALESCE(?, status), technician_id = COALESCE(?, technician_id), completed_at = COALESCE(?, completed_at), priority = COALESCE(?, priority), estimated_duration_hours = COALESCE(?, estimated_duration_hours), actual_duration_hours = COALESCE(?, actual_duration_hours), notes = COALESCE(?, notes), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
-  const args: unknown[] = [body.site_id ?? null, body.scheduled_date ?? null, body.description ?? null, body.status ?? null, body.technician_id ?? null, body.completed_at ?? null, body.priority ?? null, body.estimated_duration_hours ?? null, body.actual_duration_hours ?? null, body.notes ?? null, params.id, user.tenant];
+  let sql = "UPDATE maintenance_schedules SET equipment_id = COALESCE(?, equipment_id), scheduled_date = COALESCE(?, scheduled_date), type = COALESCE(?, type), status = COALESCE(?, status), notes = COALESCE(?, notes), technician_email = COALESCE(?, technician_email), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
+  const args: unknown[] = [body.equipment_id ?? null, body.scheduled_date ?? null, body.type ?? null, body.status ?? null, body.notes ?? null, body.technician_email ?? null, params.id, user.tenant];
   if (Number.isInteger(want)) { sql += " AND row_version = ?"; args.push(want); }
   try {
     const res = await env.DB.prepare(sql).bind(...args).run();

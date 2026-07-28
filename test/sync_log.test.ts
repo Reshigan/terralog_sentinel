@@ -13,7 +13,7 @@ test("sync_log: one workspace never sees another's rows", async () => {
   const env = makeEnv();
   const a = await signUp(env, "a@test.local");
   const b = await signUp(env, "b@test.local");
-  const made = await request(env, "POST", "/api/sync_logs", { reading_id: 1, attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" }, a);
+  const made = await request(env, "POST", "/api/sync_logs", { reading_id: 1, attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 }, a);
   expect(made.status).toBe(200);
   const mine = await request(env, "GET", "/api/sync_logs", undefined, a);
   expect(((await mine.json()) as Sync_log[]).length).toBe(1);
@@ -29,7 +29,7 @@ test("sync_log: empty, create, then list reflects it", async () => {
   expect(empty.status).toBe(200);
   expect((await empty.json()) as Sync_log[]).toEqual([]);
 
-  const res = await req("POST", "/api/sync_logs", { reading_id: 1, attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" });
+  const res = await req("POST", "/api/sync_logs", { reading_id: 1, attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 });
   expect(res.status).toBe(200);
   const created = (await res.json()) as Sync_log;
   expect(created.error_message).toBe("sample");
@@ -37,10 +37,10 @@ test("sync_log: empty, create, then list reflects it", async () => {
   const list = await req("GET", "/api/sync_logs");
   expect(((await list.json()) as Sync_log[]).length).toBe(1);
 
-  const missing = await req("POST", "/api/sync_logs", { attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" });
+  const missing = await req("POST", "/api/sync_logs", { attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 });
   expect(missing.status).toBe(400);
 
-  const badEnum = await req("POST", "/api/sync_logs", { ...{ reading_id: 1, attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" }, status: "__not_a_state__" });
+  const badEnum = await req("POST", "/api/sync_logs", { ...{ reading_id: 1, attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 }, status: "__not_a_state__" });
   expect(badEnum.status).toBe(400);
 
   const patched = await req("PATCH", `/api/sync_logs/${created.id}`, { error_message: "patched" });
@@ -49,15 +49,15 @@ test("sync_log: empty, create, then list reflects it", async () => {
   expect(after.error_message).toBe("patched");
   expect(after.reading_id).toBe(1);
 
-  const idem1 = await req("POST", "/api/sync_logs?idempotency_key=retry-1", { reading_id: 1, attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" });
-  const idem2 = await req("POST", "/api/sync_logs?idempotency_key=retry-1", { reading_id: 1, attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" });
+  const idem1 = await req("POST", "/api/sync_logs?idempotency_key=retry-1", { reading_id: 1, attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 });
+  const idem2 = await req("POST", "/api/sync_logs?idempotency_key=retry-1", { reading_id: 1, attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 });
   expect(idem2.status).toBe(200);
   expect(((await idem2.json()) as Sync_log).id).toBe(((await idem1.json()) as Sync_log).id);
 
-  const bulk = await req("POST", "/api/sync_logs/bulk", { rows: [{ reading_id: 1, attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" }, { reading_id: 1, attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" }] });
+  const bulk = await req("POST", "/api/sync_logs/bulk", { rows: [{ reading_id: 1, attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 }, { reading_id: 1, attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 }] });
   expect(bulk.status).toBe(200);
   expect(((await bulk.json()) as { created: number }).created).toBe(2);
-  const bulkBad = await req("POST", "/api/sync_logs/bulk", { rows: [{ attempt_timestamp: "2026-01-15", status: "success", http_status: 1, error_message: "sample", retry_count: 1, sync_session_id: 1, bytes_transferred: 1, duration_ms: 1, endpoint_url: "sample" }] });
+  const bulkBad = await req("POST", "/api/sync_logs/bulk", { rows: [{ attempted_at: "2026-01-15", status: "success", response_code: 1, error_message: "sample", sync_policy_id: 1 }] });
   expect(bulkBad.status).toBe(400);
 
   const stats = await req("GET", "/api/sync_logs/stats");

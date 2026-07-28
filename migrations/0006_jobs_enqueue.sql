@@ -30,6 +30,22 @@ CREATE TRIGGER IF NOT EXISTS readings_digest_ad AFTER UPDATE OF deleted_at ON re
   );
 END;
 
+CREATE TRIGGER IF NOT EXISTS sites_digest_ai AFTER INSERT ON sites BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'site.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'site.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS sites_digest_ad AFTER UPDATE OF deleted_at ON sites BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'site.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'site.digest' AND status = 'pending'
+  );
+END;
+
 CREATE TRIGGER IF NOT EXISTS sync_logs_digest_ai AFTER INSERT ON sync_logs BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
   SELECT NEW.tenant, 'sync_log.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
@@ -54,99 +70,163 @@ CREATE TRIGGER IF NOT EXISTS encryption_keys_digest_ad AFTER UPDATE OF deleted_a
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS erasure_policys_digest_ai AFTER INSERT ON erasure_policys BEGIN
+CREATE TRIGGER IF NOT EXISTS devices_digest_ai AFTER INSERT ON devices BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'erasure_policy.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'device.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'erasure_policy.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'device.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS erasure_policys_digest_ad AFTER UPDATE OF deleted_at ON erasure_policys BEGIN
+CREATE TRIGGER IF NOT EXISTS devices_digest_ad AFTER UPDATE OF deleted_at ON devices BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'erasure_policy.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'device.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'erasure_policy.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'device.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS anomalys_digest_ai AFTER INSERT ON anomalys BEGIN
+CREATE TRIGGER IF NOT EXISTS outliers_digest_ai AFTER INSERT ON outliers BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'anomaly.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'outlier.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'anomaly.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'outlier.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS anomalys_digest_ad AFTER UPDATE OF deleted_at ON anomalys BEGIN
+CREATE TRIGGER IF NOT EXISTS outliers_digest_ad AFTER UPDATE OF deleted_at ON outliers BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'anomaly.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'outlier.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'anomaly.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'outlier.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS grid_cells_digest_ai AFTER INSERT ON grid_cells BEGIN
+CREATE TRIGGER IF NOT EXISTS sync_thresholds_digest_ai AFTER INSERT ON sync_thresholds BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'grid_cell.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'sync_threshold.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'grid_cell.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'sync_threshold.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS grid_cells_digest_ad AFTER UPDATE OF deleted_at ON grid_cells BEGIN
+CREATE TRIGGER IF NOT EXISTS sync_thresholds_digest_ad AFTER UPDATE OF deleted_at ON sync_thresholds BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'grid_cell.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'sync_threshold.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'grid_cell.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'sync_threshold.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS technicians_digest_ai AFTER INSERT ON technicians BEGIN
+CREATE TRIGGER IF NOT EXISTS passphrases_digest_ai AFTER INSERT ON passphrases BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'technician.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'passphrase.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'technician.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'passphrase.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS technicians_digest_ad AFTER UPDATE OF deleted_at ON technicians BEGIN
+CREATE TRIGGER IF NOT EXISTS passphrases_digest_ad AFTER UPDATE OF deleted_at ON passphrases BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'technician.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'passphrase.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'technician.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'passphrase.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS sites_digest_ai AFTER INSERT ON sites BEGIN
+CREATE TRIGGER IF NOT EXISTS daily_aggregates_digest_ai AFTER INSERT ON daily_aggregates BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'site.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'daily_aggregate.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'site.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'daily_aggregate.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS sites_digest_ad AFTER UPDATE OF deleted_at ON sites BEGIN
+CREATE TRIGGER IF NOT EXISTS daily_aggregates_digest_ad AFTER UPDATE OF deleted_at ON daily_aggregates BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'site.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'daily_aggregate.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'site.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'daily_aggregate.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS reading_types_digest_ai AFTER INSERT ON reading_types BEGIN
+CREATE TRIGGER IF NOT EXISTS connectivity_zones_digest_ai AFTER INSERT ON connectivity_zones BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'reading_type.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'connectivity_zone.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'reading_type.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'connectivity_zone.digest' AND status = 'pending'
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS reading_types_digest_ad AFTER UPDATE OF deleted_at ON reading_types BEGIN
+CREATE TRIGGER IF NOT EXISTS connectivity_zones_digest_ad AFTER UPDATE OF deleted_at ON connectivity_zones BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'reading_type.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'connectivity_zone.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'reading_type.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'connectivity_zone.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS reading_historys_digest_ai AFTER INSERT ON reading_historys BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'reading_history.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'reading_history.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS site_visits_digest_ai AFTER INSERT ON site_visits BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'site_visit.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'site_visit.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS site_visits_digest_ad AFTER UPDATE OF deleted_at ON site_visits BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'site_visit.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'site_visit.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS equipments_digest_ai AFTER INSERT ON equipments BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'equipment.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'equipment.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS equipments_digest_ad AFTER UPDATE OF deleted_at ON equipments BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'equipment.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'equipment.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS calibration_logs_digest_ai AFTER INSERT ON calibration_logs BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'calibration_log.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'calibration_log.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS notifications_digest_ai AFTER INSERT ON notifications BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'notification.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'notification.digest' AND status = 'pending'
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS notifications_digest_ad AFTER UPDATE OF deleted_at ON notifications BEGIN
+  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
+  SELECT NEW.tenant, 'notification.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  WHERE NOT EXISTS (
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'notification.digest' AND status = 'pending'
   );
 END;
 
@@ -166,59 +246,11 @@ CREATE TRIGGER IF NOT EXISTS sync_policys_digest_ad AFTER UPDATE OF deleted_at O
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS devices_digest_ai AFTER INSERT ON devices BEGIN
+CREATE TRIGGER IF NOT EXISTS audit_trails_digest_ai AFTER INSERT ON audit_trails BEGIN
   INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'device.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  SELECT NEW.tenant, 'audit_trail.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'device.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS devices_digest_ad AFTER UPDATE OF deleted_at ON devices BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'device.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'device.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS permissions_digest_ai AFTER INSERT ON permissions BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'permission.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'permission.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS permissions_digest_ad AFTER UPDATE OF deleted_at ON permissions BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'permission.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'permission.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS audit_logs_digest_ai AFTER INSERT ON audit_logs BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'audit_log.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'audit_log.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS regions_digest_ai AFTER INSERT ON regions BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'region.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'region.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS regions_digest_ad AFTER UPDATE OF deleted_at ON regions BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'region.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'region.digest' AND status = 'pending'
+    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'audit_trail.digest' AND status = 'pending'
   );
 END;
 
@@ -235,37 +267,5 @@ CREATE TRIGGER IF NOT EXISTS maintenance_schedules_digest_ad AFTER UPDATE OF del
   SELECT NEW.tenant, 'maintenance_schedule.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   WHERE NOT EXISTS (
     SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'maintenance_schedule.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS photo_blobs_digest_ai AFTER INSERT ON photo_blobs BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'photo_blob.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'photo_blob.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS photo_blobs_digest_ad AFTER UPDATE OF deleted_at ON photo_blobs BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'photo_blob.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'photo_blob.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS sync_sessions_digest_ai AFTER INSERT ON sync_sessions BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'sync_session.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'sync_session.digest' AND status = 'pending'
-  );
-END;
-
-CREATE TRIGGER IF NOT EXISTS sync_sessions_digest_ad AFTER UPDATE OF deleted_at ON sync_sessions BEGIN
-  INSERT INTO jobs (tenant, kind, run_at, created_at, updated_at)
-  SELECT NEW.tenant, 'sync_session.digest', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-  WHERE NOT EXISTS (
-    SELECT 1 FROM jobs WHERE tenant = NEW.tenant AND kind = 'sync_session.digest' AND status = 'pending'
   );
 END;

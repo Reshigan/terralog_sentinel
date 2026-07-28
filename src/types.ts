@@ -26,116 +26,19 @@ export interface BulkResult { created: number; ids: number[] }
 
 export interface Reading {
   id: number;
-  capture_timestamp: string;
+  photo: string;
   latitude: number;
   longitude: number;
   numeric_value: number;
-  photo_blob_id: string;
+  timestamp: string;
   encrypted_blob: string;
   sync_status: string;
   sync_attempts: number;
-  device_fingerprint: string;
   dedupe_id: string;
-  erasure_policy_id: number;
-  reading_type_id: number;
   site_id: number;
-  technician_id: number;
-  weather_conditions: string;
-  equipment_used: string;
-  notes: string;
-  row_version: number;
-}
-
-export interface Sync_log {
-  id: number;
-  reading_id: number;
-  attempt_timestamp: string;
-  status: string;
-  http_status: number;
-  error_message: string;
-  retry_count: number;
-  sync_session_id: number;
-  bytes_transferred: number;
-  duration_ms: number;
-  endpoint_url: string;
-  row_version: number;
-}
-
-export interface Encryption_key {
-  id: number;
-  salt: string;
-  derived_at: string;
-  device_fingerprint: string;
-  is_active: number;
-  erased_at: string;
   device_id: number;
-  key_status: string;
-  passphrase_strength: number;
-  key_algorithm: string;
-  key_iterations: number;
-  row_version: number;
-}
-
-export interface Erasure_policy {
-  id: number;
-  name: string;
-  max_attempts: number;
-  erase_after_days: number;
-  description: string;
-  is_active: number;
-  policy_type: string;
-  notification_days: number;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  row_version: number;
-}
-
-export interface Anomaly {
-  id: number;
-  reading_id: number;
-  grid_cell_id: number;
-  cell_mean: number;
-  cell_stddev: number;
-  z_score: number;
-  detected_at: string;
-  resolved_at: string;
-  resolution_notes: string;
-  status: string;
-  assigned_to: number;
-  severity: string;
-  follow_up_required: number;
-  row_version: number;
-}
-
-export interface Grid_cell {
-  id: number;
-  grid_size_meters: number;
-  cell_hash: string;
-  latitude_min: number;
-  latitude_max: number;
-  longitude_min: number;
-  longitude_max: number;
-  last_updated: string;
-  site_id: number;
-  reading_count: number;
-  avg_value: number;
-  row_version: number;
-}
-
-export interface Technician {
-  id: number;
-  name: string;
-  email: string;
-  device_id: string;
-  last_active: string;
-  is_active: number;
-  status: string;
-  hire_date: string;
-  supervisor_id: number;
-  certification_level: string;
-  phone_number: string;
-  emergency_contact: string;
+  equipment_id: number;
+  calibration_id: number;
   row_version: number;
 }
 
@@ -144,180 +47,237 @@ export interface Site {
   name: string;
   latitude: number;
   longitude: number;
-  description: string;
-  is_active: number;
-  site_type: string;
-  region_id: number;
+  mean_value: number;
+  std_dev: number;
+  last_sync: string;
+  sync_success_rate: number;
+  technician_email: string;
   status: string;
-  installation_date: string;
-  last_inspection_date: string;
-  maintenance_frequency_days: number;
+  zone_id: number;
   row_version: number;
 }
 
-export interface Reading_type {
+export interface Sync_log {
+  id: number;
+  reading_id: number;
+  attempted_at: string;
+  status: string;
+  response_code: number;
+  error_message: string;
+  sync_policy_id: number;
+  row_version: number;
+}
+
+export interface Encryption_key {
+  id: number;
+  derived_key: string;
+  salt: string;
+  iterations: number;
+  device_fingerprint: string;
+  created_at: string;
+  is_active: number;
+  device_id: number;
+  row_version: number;
+}
+
+export interface Device {
+  id: number;
+  user_agent: string;
+  screen_width: number;
+  screen_height: number;
+  hardware_concurrency: number;
+  last_seen: string;
+  technician_email: string;
+  status: string;
+  battery_level: number;
+  row_version: number;
+}
+
+export interface Outlier {
+  id: number;
+  reading_id: number;
+  detected_at: string;
+  z_score: number;
+  is_resolved: number;
+  resolved_at: string;
+  resolved_by: string;
+  site_id: number;
+  notification_id: number;
+  row_version: number;
+}
+
+export interface Sync_threshold {
+  id: number;
+  max_attempts: number;
+  action: string;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+  row_version: number;
+}
+
+export interface Passphrase {
+  id: number;
+  hash: string;
+  salt: string;
+  is_set: number;
+  set_at: string;
+  device_id: number;
+  failed_attempts: number;
+  row_version: number;
+}
+
+export interface Daily_aggregate {
+  id: number;
+  date: string;
+  total_readings: number;
+  synced_readings: number;
+  failed_readings: number;
+  avg_numeric_value: number;
+  site_id: number;
+  zone_id: number;
+  row_version: number;
+}
+
+export interface Connectivity_zone {
   id: number;
   name: string;
-  unit: string;
-  description: string;
-  min_value: number;
-  max_value: number;
-  is_active: number;
-  category: string;
-  expected_frequency_hours: number;
-  critical_threshold: number;
-  warning_threshold: number;
+  polygon_geojson: string;
+  sync_success_rate: number;
+  last_updated: string;
+  technician_email: string;
+  status: string;
+  row_version: number;
+}
+
+export interface Reading_history {
+  id: number;
+  reading_id: number;
+  changed_field: string;
+  old_value: string;
+  new_value: string;
+  changed_at: string;
+  changed_by: string;
+  revision_id: number;
+  row_version: number;
+}
+
+export interface Site_visit {
+  id: number;
+  site_id: number;
+  visit_date: string;
+  purpose: string;
+  notes: string;
+  technician_email: string;
+  status: string;
+  equipment_id: number;
+  row_version: number;
+}
+
+export interface Equipment {
+  id: number;
+  serial_number: string;
+  type: string;
+  installation_date: string;
+  last_calibration: string;
+  site_id: number;
+  status: string;
+  warranty_expiry: string;
+  row_version: number;
+}
+
+export interface Calibration_log {
+  id: number;
+  equipment_id: number;
+  calibrated_at: string;
+  calibrated_by: string;
+  next_calibration: string;
+  notes: string;
+  status: string;
+  reading_id: number;
+  row_version: number;
+}
+
+export interface Notification {
+  id: number;
+  recipient_email: string;
+  type: string;
+  content: string;
+  is_read: number;
+  created_at: string;
+  related_entity_id: number;
+  related_entity_type: string;
   row_version: number;
 }
 
 export interface Sync_policy {
   id: number;
   name: string;
-  max_attempts: number;
-  retry_interval_seconds: number;
-  description: string;
+  min_battery_level: number;
+  min_network_strength: number;
+  retry_interval: number;
   is_active: number;
-  backoff_strategy: string;
-  min_backoff_seconds: number;
-  max_backoff_seconds: number;
-  created_by: string;
   created_at: string;
+  updated_at: string;
+  zone_id: number;
   row_version: number;
 }
 
-export interface Device {
-  id: number;
-  fingerprint: string;
-  user_agent: string;
-  screen_width: number;
-  screen_height: number;
-  hardware_concurrency: number;
-  last_seen: string;
-  status: string;
-  technician_id: number;
-  os_version: string;
-  battery_level: number;
-  storage_available_mb: number;
-  row_version: number;
-}
-
-export interface Permission {
-  id: number;
-  technician_id: number;
-  site_id: number;
-  can_read: number;
-  can_write: number;
-  can_erase: number;
-  is_active: number;
-  granted_by: string;
-  granted_at: string;
-  expires_at: string;
-  notes: string;
-  row_version: number;
-}
-
-export interface Audit_log {
+export interface Audit_trail {
   id: number;
   entity_type: string;
   entity_id: number;
   action: string;
-  performed_by: string;
   performed_at: string;
+  performed_by: string;
   metadata: string;
-  ip_address: string;
-  user_agent: string;
-  changes: string;
-  session_id: string;
-  row_version: number;
-}
-
-export interface Region {
-  id: number;
-  name: string;
-  description: string;
-  is_active: number;
-  manager_id: number;
-  latitude: number;
-  longitude: number;
-  geofence_radius_meters: number;
-  timezone: string;
-  operational_hours: string;
+  device_id: number;
   row_version: number;
 }
 
 export interface Maintenance_schedule {
   id: number;
-  site_id: number;
+  equipment_id: number;
   scheduled_date: string;
-  description: string;
+  type: string;
   status: string;
-  technician_id: number;
-  completed_at: string;
-  priority: string;
-  estimated_duration_hours: number;
-  actual_duration_hours: number;
   notes: string;
+  technician_email: string;
   row_version: number;
 }
 
-export interface Photo_blob {
-  id: number;
-  blob_id: string;
-  reading_id: number;
-  uploaded_at: string;
-  size_bytes: number;
-  mime_type: string;
-  storage_path: string;
-  checksum: string;
-  is_encrypted: number;
-  encryption_key_id: number;
-  thumbnail_blob_id: string;
-  row_version: number;
-}
-
-export interface Sync_session {
-  id: number;
-  started_at: string;
-  ended_at: string;
-  status: string;
-  readings_count: number;
-  bytes_transferred: number;
-  technician_id: number;
-  device_id: number;
-  sync_policy_id: number;
-  network_type: string;
-  duration_seconds: number;
-  row_version: number;
-}
-
-export type PendingReadingsResponse = Row[] | ApiError;
-export type PendingReadingsHandler = Handler<PendingReadingsResponse>;
-export type SyncStatusSummaryResponse = Row[] | ApiError;
-export type SyncStatusSummaryHandler = Handler<SyncStatusSummaryResponse>;
-export type DetectAnomaliesResponse = Row[] | ApiError;
-export type DetectAnomaliesHandler = Handler<DetectAnomaliesResponse>;
-export type GridStatisticsResponse = Row[] | ApiError;
-export type GridStatisticsHandler = Handler<GridStatisticsResponse>;
-export type SiteAggregatesResponse = Row[] | ApiError;
-export type SiteAggregatesHandler = Handler<SiteAggregatesResponse>;
-export type TechnicianPerformanceResponse = Row[] | ApiError;
-export type TechnicianPerformanceHandler = Handler<TechnicianPerformanceResponse>;
-export type FailedSyncsResponse = Row[] | ApiError;
-export type FailedSyncsHandler = Handler<FailedSyncsResponse>;
-export type ErasureCandidatesResponse = Row[] | ApiError;
-export type ErasureCandidatesHandler = Handler<ErasureCandidatesResponse>;
-export type ReadingAgeDistributionResponse = Row[] | ApiError;
-export type ReadingAgeDistributionHandler = Handler<ReadingAgeDistributionResponse>;
-export type ReadingTypeDistributionResponse = Row[] | ApiError;
-export type ReadingTypeDistributionHandler = Handler<ReadingTypeDistributionResponse>;
-export type SiteAnomalyRateResponse = Row[] | ApiError;
-export type SiteAnomalyRateHandler = Handler<SiteAnomalyRateResponse>;
-export type TechnicianAnomalyRateResponse = Row[] | ApiError;
-export type TechnicianAnomalyRateHandler = Handler<TechnicianAnomalyRateResponse>;
-export type ReadingValueTrendResponse = Row[] | ApiError;
-export type ReadingValueTrendHandler = Handler<ReadingValueTrendResponse>;
-export type ComplianceReportResponse = Row[] | ApiError;
-export type ComplianceReportHandler = Handler<ComplianceReportResponse>;
+export type ListOutliersResponse = Row[] | ApiError;
+export type ListOutliersHandler = Handler<ListOutliersResponse>;
+export type SyncStatusHeatmapResponse = Row[] | ApiError;
+export type SyncStatusHeatmapHandler = Handler<SyncStatusHeatmapResponse>;
+export type SiteSyncStatsResponse = Row[] | ApiError;
+export type SiteSyncStatsHandler = Handler<SiteSyncStatsResponse>;
+export type DailyAggregatesResponse = Row[] | ApiError;
+export type DailyAggregatesHandler = Handler<DailyAggregatesResponse>;
+export type SiteReadingTrendResponse = Row[] | ApiError;
+export type SiteReadingTrendHandler = Handler<SiteReadingTrendResponse>;
+export type LowSyncZonesResponse = Row[] | ApiError;
+export type LowSyncZonesHandler = Handler<LowSyncZonesResponse>;
+export type PendingSyncReadingsResponse = Row[] | ApiError;
+export type PendingSyncReadingsHandler = Handler<PendingSyncReadingsResponse>;
+export type FailedSyncThresholdReadingsResponse = Row[] | ApiError;
+export type FailedSyncThresholdReadingsHandler = Handler<FailedSyncThresholdReadingsResponse>;
+export type SiteEquipmentStatusResponse = Row[] | ApiError;
+export type SiteEquipmentStatusHandler = Handler<SiteEquipmentStatusResponse>;
+export type UnresolvedOutliersResponse = Row[] | ApiError;
+export type UnresolvedOutliersHandler = Handler<UnresolvedOutliersResponse>;
+export type UpcomingVisitsResponse = Row[] | ApiError;
+export type UpcomingVisitsHandler = Handler<UpcomingVisitsResponse>;
+export type OverdueCalibrationsResponse = Row[] | ApiError;
+export type OverdueCalibrationsHandler = Handler<OverdueCalibrationsResponse>;
+export type DedupeCheckResponse = Row[] | ApiError;
+export type DedupeCheckHandler = Handler<DedupeCheckResponse>;
+export type LowBatteryDevicesResponse = Row[] | ApiError;
+export type LowBatteryDevicesHandler = Handler<LowBatteryDevicesResponse>;
+export type WarrantyExpiryResponse = Row[] | ApiError;
+export type WarrantyExpiryHandler = Handler<WarrantyExpiryResponse>;
+export type OverdueMaintenanceResponse = Row[] | ApiError;
+export type OverdueMaintenanceHandler = Handler<OverdueMaintenanceResponse>;
 export type ListReadingsResponse = Reading[] | ApiError;
 export type ListReadingsHandler = Handler<ListReadingsResponse>;
 export type ListReadingsStatsResponse = Bucket[] | ApiError;
@@ -332,6 +292,20 @@ export type UpdateReadingResponse = Reading | ApiError;
 export type UpdateReadingHandler = Handler<UpdateReadingResponse>;
 export type DeleteReadingResponse = { ok: boolean } | ApiError;
 export type DeleteReadingHandler = Handler<DeleteReadingResponse>;
+export type ListSitesResponse = Site[] | ApiError;
+export type ListSitesHandler = Handler<ListSitesResponse>;
+export type ListSitesStatsResponse = Bucket[] | ApiError;
+export type ListSitesStatsHandler = Handler<ListSitesStatsResponse>;
+export type GetSiteResponse = Site | ApiError;
+export type GetSiteHandler = Handler<GetSiteResponse>;
+export type CreateSiteResponse = Site | ApiError;
+export type CreateSiteHandler = Handler<CreateSiteResponse>;
+export type CreateSiteBulkResponse = BulkResult | ApiError;
+export type CreateSiteBulkHandler = Handler<CreateSiteBulkResponse>;
+export type UpdateSiteResponse = Site | ApiError;
+export type UpdateSiteHandler = Handler<UpdateSiteResponse>;
+export type DeleteSiteResponse = { ok: boolean } | ApiError;
+export type DeleteSiteHandler = Handler<DeleteSiteResponse>;
 export type ListSync_logsResponse = Sync_log[] | ApiError;
 export type ListSync_logsHandler = Handler<ListSync_logsResponse>;
 export type ListSync_logsStatsResponse = Bucket[] | ApiError;
@@ -358,104 +332,6 @@ export type UpdateEncryption_keyResponse = Encryption_key | ApiError;
 export type UpdateEncryption_keyHandler = Handler<UpdateEncryption_keyResponse>;
 export type DeleteEncryption_keyResponse = { ok: boolean } | ApiError;
 export type DeleteEncryption_keyHandler = Handler<DeleteEncryption_keyResponse>;
-export type ListErasure_policysResponse = Erasure_policy[] | ApiError;
-export type ListErasure_policysHandler = Handler<ListErasure_policysResponse>;
-export type ListErasure_policysStatsResponse = Bucket[] | ApiError;
-export type ListErasure_policysStatsHandler = Handler<ListErasure_policysStatsResponse>;
-export type GetErasure_policyResponse = Erasure_policy | ApiError;
-export type GetErasure_policyHandler = Handler<GetErasure_policyResponse>;
-export type CreateErasure_policyResponse = Erasure_policy | ApiError;
-export type CreateErasure_policyHandler = Handler<CreateErasure_policyResponse>;
-export type CreateErasure_policyBulkResponse = BulkResult | ApiError;
-export type CreateErasure_policyBulkHandler = Handler<CreateErasure_policyBulkResponse>;
-export type UpdateErasure_policyResponse = Erasure_policy | ApiError;
-export type UpdateErasure_policyHandler = Handler<UpdateErasure_policyResponse>;
-export type DeleteErasure_policyResponse = { ok: boolean } | ApiError;
-export type DeleteErasure_policyHandler = Handler<DeleteErasure_policyResponse>;
-export type ListAnomalysResponse = Anomaly[] | ApiError;
-export type ListAnomalysHandler = Handler<ListAnomalysResponse>;
-export type ListAnomalysStatsResponse = Bucket[] | ApiError;
-export type ListAnomalysStatsHandler = Handler<ListAnomalysStatsResponse>;
-export type GetAnomalyResponse = Anomaly | ApiError;
-export type GetAnomalyHandler = Handler<GetAnomalyResponse>;
-export type CreateAnomalyResponse = Anomaly | ApiError;
-export type CreateAnomalyHandler = Handler<CreateAnomalyResponse>;
-export type CreateAnomalyBulkResponse = BulkResult | ApiError;
-export type CreateAnomalyBulkHandler = Handler<CreateAnomalyBulkResponse>;
-export type UpdateAnomalyResponse = Anomaly | ApiError;
-export type UpdateAnomalyHandler = Handler<UpdateAnomalyResponse>;
-export type DeleteAnomalyResponse = { ok: boolean } | ApiError;
-export type DeleteAnomalyHandler = Handler<DeleteAnomalyResponse>;
-export type ListGrid_cellsResponse = Grid_cell[] | ApiError;
-export type ListGrid_cellsHandler = Handler<ListGrid_cellsResponse>;
-export type ListGrid_cellsStatsResponse = Bucket[] | ApiError;
-export type ListGrid_cellsStatsHandler = Handler<ListGrid_cellsStatsResponse>;
-export type GetGrid_cellResponse = Grid_cell | ApiError;
-export type GetGrid_cellHandler = Handler<GetGrid_cellResponse>;
-export type CreateGrid_cellResponse = Grid_cell | ApiError;
-export type CreateGrid_cellHandler = Handler<CreateGrid_cellResponse>;
-export type CreateGrid_cellBulkResponse = BulkResult | ApiError;
-export type CreateGrid_cellBulkHandler = Handler<CreateGrid_cellBulkResponse>;
-export type UpdateGrid_cellResponse = Grid_cell | ApiError;
-export type UpdateGrid_cellHandler = Handler<UpdateGrid_cellResponse>;
-export type DeleteGrid_cellResponse = { ok: boolean } | ApiError;
-export type DeleteGrid_cellHandler = Handler<DeleteGrid_cellResponse>;
-export type ListTechniciansResponse = Technician[] | ApiError;
-export type ListTechniciansHandler = Handler<ListTechniciansResponse>;
-export type ListTechniciansStatsResponse = Bucket[] | ApiError;
-export type ListTechniciansStatsHandler = Handler<ListTechniciansStatsResponse>;
-export type GetTechnicianResponse = Technician | ApiError;
-export type GetTechnicianHandler = Handler<GetTechnicianResponse>;
-export type CreateTechnicianResponse = Technician | ApiError;
-export type CreateTechnicianHandler = Handler<CreateTechnicianResponse>;
-export type CreateTechnicianBulkResponse = BulkResult | ApiError;
-export type CreateTechnicianBulkHandler = Handler<CreateTechnicianBulkResponse>;
-export type UpdateTechnicianResponse = Technician | ApiError;
-export type UpdateTechnicianHandler = Handler<UpdateTechnicianResponse>;
-export type DeleteTechnicianResponse = { ok: boolean } | ApiError;
-export type DeleteTechnicianHandler = Handler<DeleteTechnicianResponse>;
-export type ListSitesResponse = Site[] | ApiError;
-export type ListSitesHandler = Handler<ListSitesResponse>;
-export type ListSitesStatsResponse = Bucket[] | ApiError;
-export type ListSitesStatsHandler = Handler<ListSitesStatsResponse>;
-export type GetSiteResponse = Site | ApiError;
-export type GetSiteHandler = Handler<GetSiteResponse>;
-export type CreateSiteResponse = Site | ApiError;
-export type CreateSiteHandler = Handler<CreateSiteResponse>;
-export type CreateSiteBulkResponse = BulkResult | ApiError;
-export type CreateSiteBulkHandler = Handler<CreateSiteBulkResponse>;
-export type UpdateSiteResponse = Site | ApiError;
-export type UpdateSiteHandler = Handler<UpdateSiteResponse>;
-export type DeleteSiteResponse = { ok: boolean } | ApiError;
-export type DeleteSiteHandler = Handler<DeleteSiteResponse>;
-export type ListReading_typesResponse = Reading_type[] | ApiError;
-export type ListReading_typesHandler = Handler<ListReading_typesResponse>;
-export type ListReading_typesStatsResponse = Bucket[] | ApiError;
-export type ListReading_typesStatsHandler = Handler<ListReading_typesStatsResponse>;
-export type GetReading_typeResponse = Reading_type | ApiError;
-export type GetReading_typeHandler = Handler<GetReading_typeResponse>;
-export type CreateReading_typeResponse = Reading_type | ApiError;
-export type CreateReading_typeHandler = Handler<CreateReading_typeResponse>;
-export type CreateReading_typeBulkResponse = BulkResult | ApiError;
-export type CreateReading_typeBulkHandler = Handler<CreateReading_typeBulkResponse>;
-export type UpdateReading_typeResponse = Reading_type | ApiError;
-export type UpdateReading_typeHandler = Handler<UpdateReading_typeResponse>;
-export type DeleteReading_typeResponse = { ok: boolean } | ApiError;
-export type DeleteReading_typeHandler = Handler<DeleteReading_typeResponse>;
-export type ListSync_policysResponse = Sync_policy[] | ApiError;
-export type ListSync_policysHandler = Handler<ListSync_policysResponse>;
-export type ListSync_policysStatsResponse = Bucket[] | ApiError;
-export type ListSync_policysStatsHandler = Handler<ListSync_policysStatsResponse>;
-export type GetSync_policyResponse = Sync_policy | ApiError;
-export type GetSync_policyHandler = Handler<GetSync_policyResponse>;
-export type CreateSync_policyResponse = Sync_policy | ApiError;
-export type CreateSync_policyHandler = Handler<CreateSync_policyResponse>;
-export type CreateSync_policyBulkResponse = BulkResult | ApiError;
-export type CreateSync_policyBulkHandler = Handler<CreateSync_policyBulkResponse>;
-export type UpdateSync_policyResponse = Sync_policy | ApiError;
-export type UpdateSync_policyHandler = Handler<UpdateSync_policyResponse>;
-export type DeleteSync_policyResponse = { ok: boolean } | ApiError;
-export type DeleteSync_policyHandler = Handler<DeleteSync_policyResponse>;
 export type ListDevicesResponse = Device[] | ApiError;
 export type ListDevicesHandler = Handler<ListDevicesResponse>;
 export type ListDevicesStatsResponse = Bucket[] | ApiError;
@@ -470,46 +346,168 @@ export type UpdateDeviceResponse = Device | ApiError;
 export type UpdateDeviceHandler = Handler<UpdateDeviceResponse>;
 export type DeleteDeviceResponse = { ok: boolean } | ApiError;
 export type DeleteDeviceHandler = Handler<DeleteDeviceResponse>;
-export type ListPermissionsResponse = Permission[] | ApiError;
-export type ListPermissionsHandler = Handler<ListPermissionsResponse>;
-export type ListPermissionsStatsResponse = Bucket[] | ApiError;
-export type ListPermissionsStatsHandler = Handler<ListPermissionsStatsResponse>;
-export type GetPermissionResponse = Permission | ApiError;
-export type GetPermissionHandler = Handler<GetPermissionResponse>;
-export type CreatePermissionResponse = Permission | ApiError;
-export type CreatePermissionHandler = Handler<CreatePermissionResponse>;
-export type CreatePermissionBulkResponse = BulkResult | ApiError;
-export type CreatePermissionBulkHandler = Handler<CreatePermissionBulkResponse>;
-export type UpdatePermissionResponse = Permission | ApiError;
-export type UpdatePermissionHandler = Handler<UpdatePermissionResponse>;
-export type DeletePermissionResponse = { ok: boolean } | ApiError;
-export type DeletePermissionHandler = Handler<DeletePermissionResponse>;
-export type ListAudit_logsResponse = Audit_log[] | ApiError;
-export type ListAudit_logsHandler = Handler<ListAudit_logsResponse>;
-export type ListAudit_logsStatsResponse = Bucket[] | ApiError;
-export type ListAudit_logsStatsHandler = Handler<ListAudit_logsStatsResponse>;
-export type GetAudit_logResponse = Audit_log | ApiError;
-export type GetAudit_logHandler = Handler<GetAudit_logResponse>;
-export type CreateAudit_logResponse = Audit_log | ApiError;
-export type CreateAudit_logHandler = Handler<CreateAudit_logResponse>;
-export type CreateAudit_logBulkResponse = BulkResult | ApiError;
-export type CreateAudit_logBulkHandler = Handler<CreateAudit_logBulkResponse>;
-export type UpdateAudit_logResponse = Audit_log | ApiError;
-export type UpdateAudit_logHandler = Handler<UpdateAudit_logResponse>;
-export type ListRegionsResponse = Region[] | ApiError;
-export type ListRegionsHandler = Handler<ListRegionsResponse>;
-export type ListRegionsStatsResponse = Bucket[] | ApiError;
-export type ListRegionsStatsHandler = Handler<ListRegionsStatsResponse>;
-export type GetRegionResponse = Region | ApiError;
-export type GetRegionHandler = Handler<GetRegionResponse>;
-export type CreateRegionResponse = Region | ApiError;
-export type CreateRegionHandler = Handler<CreateRegionResponse>;
-export type CreateRegionBulkResponse = BulkResult | ApiError;
-export type CreateRegionBulkHandler = Handler<CreateRegionBulkResponse>;
-export type UpdateRegionResponse = Region | ApiError;
-export type UpdateRegionHandler = Handler<UpdateRegionResponse>;
-export type DeleteRegionResponse = { ok: boolean } | ApiError;
-export type DeleteRegionHandler = Handler<DeleteRegionResponse>;
+export type ListOutliers2Response = Outlier[] | ApiError;
+export type ListOutliers2Handler = Handler<ListOutliers2Response>;
+export type ListOutliers2StatsResponse = Bucket[] | ApiError;
+export type ListOutliers2StatsHandler = Handler<ListOutliers2StatsResponse>;
+export type GetOutlierResponse = Outlier | ApiError;
+export type GetOutlierHandler = Handler<GetOutlierResponse>;
+export type CreateOutlierResponse = Outlier | ApiError;
+export type CreateOutlierHandler = Handler<CreateOutlierResponse>;
+export type CreateOutlierBulkResponse = BulkResult | ApiError;
+export type CreateOutlierBulkHandler = Handler<CreateOutlierBulkResponse>;
+export type UpdateOutlierResponse = Outlier | ApiError;
+export type UpdateOutlierHandler = Handler<UpdateOutlierResponse>;
+export type DeleteOutlierResponse = { ok: boolean } | ApiError;
+export type DeleteOutlierHandler = Handler<DeleteOutlierResponse>;
+export type ListSync_thresholdsResponse = Sync_threshold[] | ApiError;
+export type ListSync_thresholdsHandler = Handler<ListSync_thresholdsResponse>;
+export type ListSync_thresholdsStatsResponse = Bucket[] | ApiError;
+export type ListSync_thresholdsStatsHandler = Handler<ListSync_thresholdsStatsResponse>;
+export type GetSync_thresholdResponse = Sync_threshold | ApiError;
+export type GetSync_thresholdHandler = Handler<GetSync_thresholdResponse>;
+export type CreateSync_thresholdResponse = Sync_threshold | ApiError;
+export type CreateSync_thresholdHandler = Handler<CreateSync_thresholdResponse>;
+export type CreateSync_thresholdBulkResponse = BulkResult | ApiError;
+export type CreateSync_thresholdBulkHandler = Handler<CreateSync_thresholdBulkResponse>;
+export type UpdateSync_thresholdResponse = Sync_threshold | ApiError;
+export type UpdateSync_thresholdHandler = Handler<UpdateSync_thresholdResponse>;
+export type DeleteSync_thresholdResponse = { ok: boolean } | ApiError;
+export type DeleteSync_thresholdHandler = Handler<DeleteSync_thresholdResponse>;
+export type ListPassphrasesResponse = Passphrase[] | ApiError;
+export type ListPassphrasesHandler = Handler<ListPassphrasesResponse>;
+export type ListPassphrasesStatsResponse = Bucket[] | ApiError;
+export type ListPassphrasesStatsHandler = Handler<ListPassphrasesStatsResponse>;
+export type GetPassphraseResponse = Passphrase | ApiError;
+export type GetPassphraseHandler = Handler<GetPassphraseResponse>;
+export type CreatePassphraseResponse = Passphrase | ApiError;
+export type CreatePassphraseHandler = Handler<CreatePassphraseResponse>;
+export type CreatePassphraseBulkResponse = BulkResult | ApiError;
+export type CreatePassphraseBulkHandler = Handler<CreatePassphraseBulkResponse>;
+export type UpdatePassphraseResponse = Passphrase | ApiError;
+export type UpdatePassphraseHandler = Handler<UpdatePassphraseResponse>;
+export type DeletePassphraseResponse = { ok: boolean } | ApiError;
+export type DeletePassphraseHandler = Handler<DeletePassphraseResponse>;
+export type ListDaily_aggregatesResponse = Daily_aggregate[] | ApiError;
+export type ListDaily_aggregatesHandler = Handler<ListDaily_aggregatesResponse>;
+export type ListDaily_aggregatesStatsResponse = Bucket[] | ApiError;
+export type ListDaily_aggregatesStatsHandler = Handler<ListDaily_aggregatesStatsResponse>;
+export type GetDaily_aggregateResponse = Daily_aggregate | ApiError;
+export type GetDaily_aggregateHandler = Handler<GetDaily_aggregateResponse>;
+export type CreateDaily_aggregateResponse = Daily_aggregate | ApiError;
+export type CreateDaily_aggregateHandler = Handler<CreateDaily_aggregateResponse>;
+export type CreateDaily_aggregateBulkResponse = BulkResult | ApiError;
+export type CreateDaily_aggregateBulkHandler = Handler<CreateDaily_aggregateBulkResponse>;
+export type UpdateDaily_aggregateResponse = Daily_aggregate | ApiError;
+export type UpdateDaily_aggregateHandler = Handler<UpdateDaily_aggregateResponse>;
+export type DeleteDaily_aggregateResponse = { ok: boolean } | ApiError;
+export type DeleteDaily_aggregateHandler = Handler<DeleteDaily_aggregateResponse>;
+export type ListConnectivity_zonesResponse = Connectivity_zone[] | ApiError;
+export type ListConnectivity_zonesHandler = Handler<ListConnectivity_zonesResponse>;
+export type ListConnectivity_zonesStatsResponse = Bucket[] | ApiError;
+export type ListConnectivity_zonesStatsHandler = Handler<ListConnectivity_zonesStatsResponse>;
+export type GetConnectivity_zoneResponse = Connectivity_zone | ApiError;
+export type GetConnectivity_zoneHandler = Handler<GetConnectivity_zoneResponse>;
+export type CreateConnectivity_zoneResponse = Connectivity_zone | ApiError;
+export type CreateConnectivity_zoneHandler = Handler<CreateConnectivity_zoneResponse>;
+export type CreateConnectivity_zoneBulkResponse = BulkResult | ApiError;
+export type CreateConnectivity_zoneBulkHandler = Handler<CreateConnectivity_zoneBulkResponse>;
+export type UpdateConnectivity_zoneResponse = Connectivity_zone | ApiError;
+export type UpdateConnectivity_zoneHandler = Handler<UpdateConnectivity_zoneResponse>;
+export type DeleteConnectivity_zoneResponse = { ok: boolean } | ApiError;
+export type DeleteConnectivity_zoneHandler = Handler<DeleteConnectivity_zoneResponse>;
+export type ListReading_historysResponse = Reading_history[] | ApiError;
+export type ListReading_historysHandler = Handler<ListReading_historysResponse>;
+export type ListReading_historysStatsResponse = Bucket[] | ApiError;
+export type ListReading_historysStatsHandler = Handler<ListReading_historysStatsResponse>;
+export type GetReading_historyResponse = Reading_history | ApiError;
+export type GetReading_historyHandler = Handler<GetReading_historyResponse>;
+export type CreateReading_historyResponse = Reading_history | ApiError;
+export type CreateReading_historyHandler = Handler<CreateReading_historyResponse>;
+export type CreateReading_historyBulkResponse = BulkResult | ApiError;
+export type CreateReading_historyBulkHandler = Handler<CreateReading_historyBulkResponse>;
+export type UpdateReading_historyResponse = Reading_history | ApiError;
+export type UpdateReading_historyHandler = Handler<UpdateReading_historyResponse>;
+export type ListSite_visitsResponse = Site_visit[] | ApiError;
+export type ListSite_visitsHandler = Handler<ListSite_visitsResponse>;
+export type ListSite_visitsStatsResponse = Bucket[] | ApiError;
+export type ListSite_visitsStatsHandler = Handler<ListSite_visitsStatsResponse>;
+export type GetSite_visitResponse = Site_visit | ApiError;
+export type GetSite_visitHandler = Handler<GetSite_visitResponse>;
+export type CreateSite_visitResponse = Site_visit | ApiError;
+export type CreateSite_visitHandler = Handler<CreateSite_visitResponse>;
+export type CreateSite_visitBulkResponse = BulkResult | ApiError;
+export type CreateSite_visitBulkHandler = Handler<CreateSite_visitBulkResponse>;
+export type UpdateSite_visitResponse = Site_visit | ApiError;
+export type UpdateSite_visitHandler = Handler<UpdateSite_visitResponse>;
+export type DeleteSite_visitResponse = { ok: boolean } | ApiError;
+export type DeleteSite_visitHandler = Handler<DeleteSite_visitResponse>;
+export type ListEquipmentsResponse = Equipment[] | ApiError;
+export type ListEquipmentsHandler = Handler<ListEquipmentsResponse>;
+export type ListEquipmentsStatsResponse = Bucket[] | ApiError;
+export type ListEquipmentsStatsHandler = Handler<ListEquipmentsStatsResponse>;
+export type GetEquipmentResponse = Equipment | ApiError;
+export type GetEquipmentHandler = Handler<GetEquipmentResponse>;
+export type CreateEquipmentResponse = Equipment | ApiError;
+export type CreateEquipmentHandler = Handler<CreateEquipmentResponse>;
+export type CreateEquipmentBulkResponse = BulkResult | ApiError;
+export type CreateEquipmentBulkHandler = Handler<CreateEquipmentBulkResponse>;
+export type UpdateEquipmentResponse = Equipment | ApiError;
+export type UpdateEquipmentHandler = Handler<UpdateEquipmentResponse>;
+export type DeleteEquipmentResponse = { ok: boolean } | ApiError;
+export type DeleteEquipmentHandler = Handler<DeleteEquipmentResponse>;
+export type ListCalibration_logsResponse = Calibration_log[] | ApiError;
+export type ListCalibration_logsHandler = Handler<ListCalibration_logsResponse>;
+export type ListCalibration_logsStatsResponse = Bucket[] | ApiError;
+export type ListCalibration_logsStatsHandler = Handler<ListCalibration_logsStatsResponse>;
+export type GetCalibration_logResponse = Calibration_log | ApiError;
+export type GetCalibration_logHandler = Handler<GetCalibration_logResponse>;
+export type CreateCalibration_logResponse = Calibration_log | ApiError;
+export type CreateCalibration_logHandler = Handler<CreateCalibration_logResponse>;
+export type CreateCalibration_logBulkResponse = BulkResult | ApiError;
+export type CreateCalibration_logBulkHandler = Handler<CreateCalibration_logBulkResponse>;
+export type UpdateCalibration_logResponse = Calibration_log | ApiError;
+export type UpdateCalibration_logHandler = Handler<UpdateCalibration_logResponse>;
+export type ListNotificationsResponse = Notification[] | ApiError;
+export type ListNotificationsHandler = Handler<ListNotificationsResponse>;
+export type ListNotificationsStatsResponse = Bucket[] | ApiError;
+export type ListNotificationsStatsHandler = Handler<ListNotificationsStatsResponse>;
+export type GetNotificationResponse = Notification | ApiError;
+export type GetNotificationHandler = Handler<GetNotificationResponse>;
+export type CreateNotificationResponse = Notification | ApiError;
+export type CreateNotificationHandler = Handler<CreateNotificationResponse>;
+export type CreateNotificationBulkResponse = BulkResult | ApiError;
+export type CreateNotificationBulkHandler = Handler<CreateNotificationBulkResponse>;
+export type UpdateNotificationResponse = Notification | ApiError;
+export type UpdateNotificationHandler = Handler<UpdateNotificationResponse>;
+export type DeleteNotificationResponse = { ok: boolean } | ApiError;
+export type DeleteNotificationHandler = Handler<DeleteNotificationResponse>;
+export type ListSync_policysResponse = Sync_policy[] | ApiError;
+export type ListSync_policysHandler = Handler<ListSync_policysResponse>;
+export type ListSync_policysStatsResponse = Bucket[] | ApiError;
+export type ListSync_policysStatsHandler = Handler<ListSync_policysStatsResponse>;
+export type GetSync_policyResponse = Sync_policy | ApiError;
+export type GetSync_policyHandler = Handler<GetSync_policyResponse>;
+export type CreateSync_policyResponse = Sync_policy | ApiError;
+export type CreateSync_policyHandler = Handler<CreateSync_policyResponse>;
+export type CreateSync_policyBulkResponse = BulkResult | ApiError;
+export type CreateSync_policyBulkHandler = Handler<CreateSync_policyBulkResponse>;
+export type UpdateSync_policyResponse = Sync_policy | ApiError;
+export type UpdateSync_policyHandler = Handler<UpdateSync_policyResponse>;
+export type DeleteSync_policyResponse = { ok: boolean } | ApiError;
+export type DeleteSync_policyHandler = Handler<DeleteSync_policyResponse>;
+export type ListAudit_trailsResponse = Audit_trail[] | ApiError;
+export type ListAudit_trailsHandler = Handler<ListAudit_trailsResponse>;
+export type ListAudit_trailsStatsResponse = Bucket[] | ApiError;
+export type ListAudit_trailsStatsHandler = Handler<ListAudit_trailsStatsResponse>;
+export type GetAudit_trailResponse = Audit_trail | ApiError;
+export type GetAudit_trailHandler = Handler<GetAudit_trailResponse>;
+export type CreateAudit_trailResponse = Audit_trail | ApiError;
+export type CreateAudit_trailHandler = Handler<CreateAudit_trailResponse>;
+export type CreateAudit_trailBulkResponse = BulkResult | ApiError;
+export type CreateAudit_trailBulkHandler = Handler<CreateAudit_trailBulkResponse>;
+export type UpdateAudit_trailResponse = Audit_trail | ApiError;
+export type UpdateAudit_trailHandler = Handler<UpdateAudit_trailResponse>;
 export type ListMaintenance_schedulesResponse = Maintenance_schedule[] | ApiError;
 export type ListMaintenance_schedulesHandler = Handler<ListMaintenance_schedulesResponse>;
 export type ListMaintenance_schedulesStatsResponse = Bucket[] | ApiError;
@@ -524,31 +522,3 @@ export type UpdateMaintenance_scheduleResponse = Maintenance_schedule | ApiError
 export type UpdateMaintenance_scheduleHandler = Handler<UpdateMaintenance_scheduleResponse>;
 export type DeleteMaintenance_scheduleResponse = { ok: boolean } | ApiError;
 export type DeleteMaintenance_scheduleHandler = Handler<DeleteMaintenance_scheduleResponse>;
-export type ListPhoto_blobsResponse = Photo_blob[] | ApiError;
-export type ListPhoto_blobsHandler = Handler<ListPhoto_blobsResponse>;
-export type ListPhoto_blobsStatsResponse = Bucket[] | ApiError;
-export type ListPhoto_blobsStatsHandler = Handler<ListPhoto_blobsStatsResponse>;
-export type GetPhoto_blobResponse = Photo_blob | ApiError;
-export type GetPhoto_blobHandler = Handler<GetPhoto_blobResponse>;
-export type CreatePhoto_blobResponse = Photo_blob | ApiError;
-export type CreatePhoto_blobHandler = Handler<CreatePhoto_blobResponse>;
-export type CreatePhoto_blobBulkResponse = BulkResult | ApiError;
-export type CreatePhoto_blobBulkHandler = Handler<CreatePhoto_blobBulkResponse>;
-export type UpdatePhoto_blobResponse = Photo_blob | ApiError;
-export type UpdatePhoto_blobHandler = Handler<UpdatePhoto_blobResponse>;
-export type DeletePhoto_blobResponse = { ok: boolean } | ApiError;
-export type DeletePhoto_blobHandler = Handler<DeletePhoto_blobResponse>;
-export type ListSync_sessionsResponse = Sync_session[] | ApiError;
-export type ListSync_sessionsHandler = Handler<ListSync_sessionsResponse>;
-export type ListSync_sessionsStatsResponse = Bucket[] | ApiError;
-export type ListSync_sessionsStatsHandler = Handler<ListSync_sessionsStatsResponse>;
-export type GetSync_sessionResponse = Sync_session | ApiError;
-export type GetSync_sessionHandler = Handler<GetSync_sessionResponse>;
-export type CreateSync_sessionResponse = Sync_session | ApiError;
-export type CreateSync_sessionHandler = Handler<CreateSync_sessionResponse>;
-export type CreateSync_sessionBulkResponse = BulkResult | ApiError;
-export type CreateSync_sessionBulkHandler = Handler<CreateSync_sessionBulkResponse>;
-export type UpdateSync_sessionResponse = Sync_session | ApiError;
-export type UpdateSync_sessionHandler = Handler<UpdateSync_sessionResponse>;
-export type DeleteSync_sessionResponse = { ok: boolean } | ApiError;
-export type DeleteSync_sessionHandler = Handler<DeleteSync_sessionResponse>;

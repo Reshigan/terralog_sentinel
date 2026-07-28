@@ -82,7 +82,7 @@ async function startSession(env: Env, userId: number): Promise<string> {
 export interface AuthUser {
   id: number;
   tenant: string;
-  role: "site_supervisor" | "field_technician" | "data_analyst";
+  role: "site_supervisor" | "field_technician";
   email: string;
 }
 
@@ -91,9 +91,9 @@ export interface AuthUser {
  * role the contract declares lands in a tier instead of being ignored — and a
  * value outside the union (a hand-edited row, a stale session) is in no set and
  * is therefore refused everywhere. */
-export const ROLES: readonly AuthUser["role"][] = ["site_supervisor", "field_technician", "data_analyst"];
+export const ROLES: readonly AuthUser["role"][] = ["site_supervisor", "field_technician"];
 /** Everyone but the read-only role. Guards every mutation. */
-export const WRITE_ROLES: readonly AuthUser["role"][] = ["site_supervisor", "field_technician"];
+export const WRITE_ROLES: readonly AuthUser["role"][] = ["site_supervisor"];
 /** The privileged tier: the audit trail, and revoking someone's session. */
 export const ADMIN_ROLES: readonly AuthUser["role"][] = ["site_supervisor"];
 

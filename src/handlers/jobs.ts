@@ -55,6 +55,20 @@ jobRunners["reading.digest"] = async (env, _payload, job) => {
     .run();
 };
 
+jobRunners["site.digest"] = async (env, _payload, job) => {
+  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
+  // of the row that was written — never from the payload, which nothing verifies.
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM sites WHERE tenant = ? AND deleted_at IS NULL")
+    .bind(job.tenant)
+    .first<{ n: number }>();
+  await env.DB.prepare(
+    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
+      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
+  )
+    .bind(job.tenant, "site", counted?.n ?? 0, new Date().toISOString())
+    .run();
+};
+
 jobRunners["sync_log.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
@@ -83,87 +97,157 @@ jobRunners["encryption_key.digest"] = async (env, _payload, job) => {
     .run();
 };
 
-jobRunners["erasure_policy.digest"] = async (env, _payload, job) => {
+jobRunners["device.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM erasure_policys WHERE tenant = ? AND deleted_at IS NULL")
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM devices WHERE tenant = ? AND deleted_at IS NULL")
     .bind(job.tenant)
     .first<{ n: number }>();
   await env.DB.prepare(
     "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
-    .bind(job.tenant, "erasure_policy", counted?.n ?? 0, new Date().toISOString())
+    .bind(job.tenant, "device", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 
-jobRunners["anomaly.digest"] = async (env, _payload, job) => {
+jobRunners["outlier.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM anomalys WHERE tenant = ? AND deleted_at IS NULL")
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM outliers WHERE tenant = ? AND deleted_at IS NULL")
     .bind(job.tenant)
     .first<{ n: number }>();
   await env.DB.prepare(
     "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
-    .bind(job.tenant, "anomaly", counted?.n ?? 0, new Date().toISOString())
+    .bind(job.tenant, "outlier", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 
-jobRunners["grid_cell.digest"] = async (env, _payload, job) => {
+jobRunners["sync_threshold.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM grid_cells WHERE tenant = ? AND deleted_at IS NULL")
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM sync_thresholds WHERE tenant = ? AND deleted_at IS NULL")
     .bind(job.tenant)
     .first<{ n: number }>();
   await env.DB.prepare(
     "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
-    .bind(job.tenant, "grid_cell", counted?.n ?? 0, new Date().toISOString())
+    .bind(job.tenant, "sync_threshold", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 
-jobRunners["technician.digest"] = async (env, _payload, job) => {
+jobRunners["passphrase.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM technicians WHERE tenant = ? AND deleted_at IS NULL")
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM passphrases WHERE tenant = ? AND deleted_at IS NULL")
     .bind(job.tenant)
     .first<{ n: number }>();
   await env.DB.prepare(
     "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
-    .bind(job.tenant, "technician", counted?.n ?? 0, new Date().toISOString())
+    .bind(job.tenant, "passphrase", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 
-jobRunners["site.digest"] = async (env, _payload, job) => {
+jobRunners["daily_aggregate.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM sites WHERE tenant = ? AND deleted_at IS NULL")
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM daily_aggregates WHERE tenant = ? AND deleted_at IS NULL")
     .bind(job.tenant)
     .first<{ n: number }>();
   await env.DB.prepare(
     "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
-    .bind(job.tenant, "site", counted?.n ?? 0, new Date().toISOString())
+    .bind(job.tenant, "daily_aggregate", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 
-jobRunners["reading_type.digest"] = async (env, _payload, job) => {
+jobRunners["connectivity_zone.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM reading_types WHERE tenant = ? AND deleted_at IS NULL")
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM connectivity_zones WHERE tenant = ? AND deleted_at IS NULL")
     .bind(job.tenant)
     .first<{ n: number }>();
   await env.DB.prepare(
     "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
-    .bind(job.tenant, "reading_type", counted?.n ?? 0, new Date().toISOString())
+    .bind(job.tenant, "connectivity_zone", counted?.n ?? 0, new Date().toISOString())
+    .run();
+};
+
+jobRunners["reading_history.digest"] = async (env, _payload, job) => {
+  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
+  // of the row that was written — never from the payload, which nothing verifies.
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM reading_historys WHERE tenant = ? AND deleted_at IS NULL")
+    .bind(job.tenant)
+    .first<{ n: number }>();
+  await env.DB.prepare(
+    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
+      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
+  )
+    .bind(job.tenant, "reading_history", counted?.n ?? 0, new Date().toISOString())
+    .run();
+};
+
+jobRunners["site_visit.digest"] = async (env, _payload, job) => {
+  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
+  // of the row that was written — never from the payload, which nothing verifies.
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM site_visits WHERE tenant = ? AND deleted_at IS NULL")
+    .bind(job.tenant)
+    .first<{ n: number }>();
+  await env.DB.prepare(
+    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
+      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
+  )
+    .bind(job.tenant, "site_visit", counted?.n ?? 0, new Date().toISOString())
+    .run();
+};
+
+jobRunners["equipment.digest"] = async (env, _payload, job) => {
+  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
+  // of the row that was written — never from the payload, which nothing verifies.
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM equipments WHERE tenant = ? AND deleted_at IS NULL")
+    .bind(job.tenant)
+    .first<{ n: number }>();
+  await env.DB.prepare(
+    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
+      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
+  )
+    .bind(job.tenant, "equipment", counted?.n ?? 0, new Date().toISOString())
+    .run();
+};
+
+jobRunners["calibration_log.digest"] = async (env, _payload, job) => {
+  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
+  // of the row that was written — never from the payload, which nothing verifies.
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM calibration_logs WHERE tenant = ? AND deleted_at IS NULL")
+    .bind(job.tenant)
+    .first<{ n: number }>();
+  await env.DB.prepare(
+    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
+      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
+  )
+    .bind(job.tenant, "calibration_log", counted?.n ?? 0, new Date().toISOString())
+    .run();
+};
+
+jobRunners["notification.digest"] = async (env, _payload, job) => {
+  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
+  // of the row that was written — never from the payload, which nothing verifies.
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM notifications WHERE tenant = ? AND deleted_at IS NULL")
+    .bind(job.tenant)
+    .first<{ n: number }>();
+  await env.DB.prepare(
+    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
+      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
+  )
+    .bind(job.tenant, "notification", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 
@@ -181,59 +265,17 @@ jobRunners["sync_policy.digest"] = async (env, _payload, job) => {
     .run();
 };
 
-jobRunners["device.digest"] = async (env, _payload, job) => {
+jobRunners["audit_trail.digest"] = async (env, _payload, job) => {
   // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
   // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM devices WHERE tenant = ? AND deleted_at IS NULL")
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM audit_trails WHERE tenant = ? AND deleted_at IS NULL")
     .bind(job.tenant)
     .first<{ n: number }>();
   await env.DB.prepare(
     "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
-    .bind(job.tenant, "device", counted?.n ?? 0, new Date().toISOString())
-    .run();
-};
-
-jobRunners["permission.digest"] = async (env, _payload, job) => {
-  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
-  // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM permissions WHERE tenant = ? AND deleted_at IS NULL")
-    .bind(job.tenant)
-    .first<{ n: number }>();
-  await env.DB.prepare(
-    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
-      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
-  )
-    .bind(job.tenant, "permission", counted?.n ?? 0, new Date().toISOString())
-    .run();
-};
-
-jobRunners["audit_log.digest"] = async (env, _payload, job) => {
-  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
-  // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM audit_logs WHERE tenant = ? AND deleted_at IS NULL")
-    .bind(job.tenant)
-    .first<{ n: number }>();
-  await env.DB.prepare(
-    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
-      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
-  )
-    .bind(job.tenant, "audit_log", counted?.n ?? 0, new Date().toISOString())
-    .run();
-};
-
-jobRunners["region.digest"] = async (env, _payload, job) => {
-  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
-  // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM regions WHERE tenant = ? AND deleted_at IS NULL")
-    .bind(job.tenant)
-    .first<{ n: number }>();
-  await env.DB.prepare(
-    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
-      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
-  )
-    .bind(job.tenant, "region", counted?.n ?? 0, new Date().toISOString())
+    .bind(job.tenant, "audit_trail", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 
@@ -248,34 +290,6 @@ jobRunners["maintenance_schedule.digest"] = async (env, _payload, job) => {
       "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
   )
     .bind(job.tenant, "maintenance_schedule", counted?.n ?? 0, new Date().toISOString())
-    .run();
-};
-
-jobRunners["photo_blob.digest"] = async (env, _payload, job) => {
-  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
-  // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM photo_blobs WHERE tenant = ? AND deleted_at IS NULL")
-    .bind(job.tenant)
-    .first<{ n: number }>();
-  await env.DB.prepare(
-    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
-      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
-  )
-    .bind(job.tenant, "photo_blob", counted?.n ?? 0, new Date().toISOString())
-    .run();
-};
-
-jobRunners["sync_session.digest"] = async (env, _payload, job) => {
-  // The tenant comes off the QUEUED ROW, which the trigger stamped from the tenant
-  // of the row that was written — never from the payload, which nothing verifies.
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n FROM sync_sessions WHERE tenant = ? AND deleted_at IS NULL")
-    .bind(job.tenant)
-    .first<{ n: number }>();
-  await env.DB.prepare(
-    "INSERT INTO job_digests (tenant, entity, row_count, computed_at) VALUES (?, ?, ?, ?) " +
-      "ON CONFLICT (tenant, entity) DO UPDATE SET row_count = excluded.row_count, computed_at = excluded.computed_at",
-  )
-    .bind(job.tenant, "sync_session", counted?.n ?? 0, new Date().toISOString())
     .run();
 };
 

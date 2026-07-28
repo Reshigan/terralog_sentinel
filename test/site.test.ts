@@ -13,7 +13,7 @@ test("site: one workspace never sees another's rows", async () => {
   const env = makeEnv();
   const a = await signUp(env, "a@test.local");
   const b = await signUp(env, "b@test.local");
-  const made = await request(env, "POST", "/api/sites", { name: "sample", latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 }, a);
+  const made = await request(env, "POST", "/api/sites", { name: "sample", latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 }, a);
   expect(made.status).toBe(200);
   const mine = await request(env, "GET", "/api/sites", undefined, a);
   expect(((await mine.json()) as Site[]).length).toBe(1);
@@ -29,7 +29,7 @@ test("site: empty, create, then list reflects it", async () => {
   expect(empty.status).toBe(200);
   expect((await empty.json()) as Site[]).toEqual([]);
 
-  const res = await req("POST", "/api/sites", { name: "sample", latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 });
+  const res = await req("POST", "/api/sites", { name: "sample", latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 });
   expect(res.status).toBe(200);
   const created = (await res.json()) as Site;
   expect(created.name).toBe("sample");
@@ -37,10 +37,10 @@ test("site: empty, create, then list reflects it", async () => {
   const list = await req("GET", "/api/sites");
   expect(((await list.json()) as Site[]).length).toBe(1);
 
-  const missing = await req("POST", "/api/sites", { latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 });
+  const missing = await req("POST", "/api/sites", { latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 });
   expect(missing.status).toBe(400);
 
-  const badEnum = await req("POST", "/api/sites", { ...{ name: "sample", latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 }, site_type: "__not_a_state__" });
+  const badEnum = await req("POST", "/api/sites", { ...{ name: "sample", latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 }, status: "__not_a_state__" });
   expect(badEnum.status).toBe(400);
 
   const patched = await req("PATCH", `/api/sites/${created.id}`, { name: "patched" });
@@ -53,15 +53,15 @@ test("site: empty, create, then list reflects it", async () => {
   expect(wfOk.status).toBe(200);
   expect(((await wfOk.json()) as Site).status).toBe("maintenance");
 
-  const idem1 = await req("POST", "/api/sites?idempotency_key=retry-1", { name: "sample", latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 });
-  const idem2 = await req("POST", "/api/sites?idempotency_key=retry-1", { name: "sample", latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 });
+  const idem1 = await req("POST", "/api/sites?idempotency_key=retry-1", { name: "sample", latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 });
+  const idem2 = await req("POST", "/api/sites?idempotency_key=retry-1", { name: "sample", latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 });
   expect(idem2.status).toBe(200);
   expect(((await idem2.json()) as Site).id).toBe(((await idem1.json()) as Site).id);
 
-  const bulk = await req("POST", "/api/sites/bulk", { rows: [{ name: "sample", latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 }, { name: "sample", latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 }] });
+  const bulk = await req("POST", "/api/sites/bulk", { rows: [{ name: "sample", latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 }, { name: "sample", latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 }] });
   expect(bulk.status).toBe(200);
   expect(((await bulk.json()) as { created: number }).created).toBe(2);
-  const bulkBad = await req("POST", "/api/sites/bulk", { rows: [{ latitude: 1.5, longitude: 1.5, description: "sample", is_active: 1, site_type: "pipeline", region_id: 1, status: "operational", installation_date: "2026-01-15", last_inspection_date: "2026-01-15", maintenance_frequency_days: 1 }] });
+  const bulkBad = await req("POST", "/api/sites/bulk", { rows: [{ latitude: 1.5, longitude: 1.5, mean_value: 1.5, std_dev: 1.5, last_sync: "2026-01-15", sync_success_rate: 1.5, technician_email: "sample", status: "active", zone_id: 1 }] });
   expect(bulkBad.status).toBe(400);
 
   const stats = await req("GET", "/api/sites/stats");

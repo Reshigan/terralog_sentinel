@@ -1,18 +1,18 @@
 # TerraTether — launch kit
 
 ## Headline
-Field Data, Locked and Delivered
+Secure Field Data, Anywhere Offline
 
 ## Subhead
-Capture photos, GPS, and readings offline; AES‑256‑GCM keeps them safe until connectivity returns.
+TerraTether encrypts each photo, GPS point, and reading on‑device, then syncs automatically when connectivity returns.
 
 ## Launch post
-TerraTether launches today as a fully offline‑first PWA for field technicians. It records photos, location and numeric readings on the device, encrypts everything with AES‑256‑GCM, and syncs automatically to Cloudflare Workers when a network appears. No accounts, no cloud setup—just a passphrase‑derived key and deterministic UUIDs for deduplication. The app works on Android 8+ and iOS 12+ browsers and meets WCAG AAA accessibility.
+Today we release TerraTether, the offline‑first PWA that lets field technicians capture photos, location, and measurements without a network connection. All data is AES‑256‑GCM encrypted with a passphrase‑derived key bound to the device. A service worker queues uploads and clears local storage only after a signed receipt from our Cloudflare endpoint. The app works in any modern browser on Android 8+ and iOS 12+, requiring no accounts or external configuration.
 
 ## OG description
-Offline‑first PWA that captures photos, GPS, and numbers, encrypts with AES‑256‑GCM, and syncs securely when online.
+TerraTether stores encrypted field readings offline and syncs them securely when online, all without accounts.
 
 ## Taglines
-- Secure field data, even offline.
-- Capture now, encrypt forever.
-- Sync when you can, safe always.
+- Capture. Encrypt. Sync.
+- Field data, locked locally.
+- Zero‑setup, always secure.

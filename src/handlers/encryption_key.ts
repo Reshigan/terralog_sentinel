@@ -14,7 +14,7 @@ function constraintError(err: unknown): string | null {
 }
 
 type Spec = { name: string; type: "text" | "integer" | "real" | "date" | "bool" | "enum"; values?: string[] };
-const FIELDS: Spec[] = [{ name: "salt", type: "text" }, { name: "derived_at", type: "date" }, { name: "device_fingerprint", type: "text" }, { name: "is_active", type: "bool" }, { name: "erased_at", type: "date" }, { name: "device_id", type: "integer" }, { name: "key_status", type: "enum", values: ["active","revoked","erased"] }, { name: "passphrase_strength", type: "integer" }, { name: "key_algorithm", type: "text" }, { name: "key_iterations", type: "integer" }];
+const FIELDS: Spec[] = [{ name: "derived_key", type: "text" }, { name: "salt", type: "text" }, { name: "iterations", type: "integer" }, { name: "device_fingerprint", type: "text" }, { name: "created_at", type: "date" }, { name: "is_active", type: "bool" }, { name: "device_id", type: "integer" }];
 function validate(body: Partial<Encryption_key>, partial = false): string | null {
   const b = body as Record<string, unknown>;
   for (const { name, type, values } of FIELDS) {
@@ -33,17 +33,15 @@ function validate(body: Partial<Encryption_key>, partial = false): string | null
   return null;
 }
 
-const WORKFLOW: Record<string, string[]> = {"active":["revoked","erased"],"revoked":["erased"],"erased":[]};
-
-const SORTABLE: string[] = ["id","salt","derived_at","device_fingerprint","is_active","erased_at","device_id","key_status","passphrase_strength","key_algorithm","key_iterations"];
-const SEARCHABLE: string[] = ["salt","derived_at","device_fingerprint","erased_at","key_status","key_algorithm"];
+const SORTABLE: string[] = ["id","derived_key","salt","iterations","device_fingerprint","created_at","is_active","device_id"];
+const SEARCHABLE: string[] = ["derived_key","salt","device_fingerprint","created_at"];
 const FILTERABLE: string[] = ["device_id"];
-const MATCHABLE: string[] = ["key_status"];
-const DATED: string[] = ["derived_at","erased_at"];
-const GROUPABLE: string[] = ["derived_at","is_active","erased_at","device_id","key_status"];
-const MEASURABLE: string[] = ["passphrase_strength","key_iterations"];
+const MATCHABLE: string[] = [];
+const DATED: string[] = ["created_at"];
+const GROUPABLE: string[] = ["created_at","is_active","device_id"];
+const MEASURABLE: string[] = ["iterations"];
 /** ref column -> the parent it names, and what a rollup may group by over there. */
-const HOPS: Record<string, { table: string; cols: string[] }> = {"device_id":{"table":"devices","cols":["last_seen","status","technician_id"]}};
+const HOPS: Record<string, { table: string; cols: string[] }> = {"device_id":{"table":"devices","cols":["last_seen","status"]}};
 const GROUPINGS: string[] = [...GROUPABLE, ...Object.entries(HOPS).flatMap(([r, h]) => h.cols.map((c) => r + "." + c))];
 
 /** The tenant + live + filter WHERE for this entity, or a message to 400 with. */
@@ -93,7 +91,7 @@ export const listEncryption_keys: ListEncryption_keysHandler = async (req, env) 
   const sc = scope(url, user.tenant);
   if (typeof sc === "string") return json({ error: sc }, 400);
   const { where, args } = sc;
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(passphrase_strength), 0) AS s_passphrase_strength, COALESCE(SUM(key_iterations), 0) AS s_key_iterations FROM encryption_keys WHERE " + where).bind(...args).first<Record<string, number>>();
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(iterations), 0) AS s_iterations FROM encryption_keys WHERE " + where).bind(...args).first<Record<string, number>>();
   let pageWhere = where;
   const pageArgs = [...args];
   const cursor = Math.trunc(Number(url.searchParams.get("cursor")));
@@ -108,7 +106,7 @@ export const listEncryption_keys: ListEncryption_keysHandler = async (req, env) 
   out.headers.set("x-total-count", String(counted?.n ?? results.length));
   const last = results[results.length - 1];
   if (sort === "id" && last && results.length === per) out.headers.set("x-next-cursor", String(last.id));
-  if (counted) out.headers.set("x-totals", JSON.stringify({ passphrase_strength: counted.s_passphrase_strength ?? 0, key_iterations: counted.s_key_iterations ?? 0 }));
+  if (counted) out.headers.set("x-totals", JSON.stringify({ iterations: counted.s_iterations ?? 0 }));
   return out;
 };
 
@@ -177,7 +175,7 @@ export const createEncryption_key: CreateEncryption_keyHandler = async (req, env
     }
   }
   try {
-    const res = await env.DB.prepare("INSERT INTO encryption_keys (salt, derived_at, device_fingerprint, is_active, erased_at, device_id, key_status, passphrase_strength, key_algorithm, key_iterations, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.salt ?? null, body.derived_at ?? null, body.device_fingerprint ?? null, body.is_active ?? null, body.erased_at ?? null, body.device_id ?? null, body.key_status ?? null, body.passphrase_strength ?? null, body.key_algorithm ?? null, body.key_iterations ?? null, user.tenant).run();
+    const res = await env.DB.prepare("INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(body.derived_key ?? null, body.salt ?? null, body.iterations ?? null, body.device_fingerprint ?? null, body.created_at ?? null, body.is_active ?? null, body.device_id ?? null, user.tenant).run();
     const row = await env.DB.prepare("SELECT * FROM encryption_keys WHERE id = ?").bind(res.meta.last_row_id).first<Encryption_key>();
     if (key)
       await env.DB.prepare("INSERT OR IGNORE INTO idempotency (tenant, key, endpoint, row_id, at) VALUES (?, ?, ?, ?, ?)")
@@ -207,9 +205,9 @@ export const createEncryption_keyBulk: CreateEncryption_keyBulkHandler = async (
     if (bad) return json({ error: "row " + i + ": " + bad }, 400);
   }
   try {
-    const stmt = env.DB.prepare("INSERT INTO encryption_keys (salt, derived_at, device_fingerprint, is_active, erased_at, device_id, key_status, passphrase_strength, key_algorithm, key_iterations, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
+    const stmt = env.DB.prepare("INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
     const out = await env.DB.batch<{ id: number }>(
-      rows.map((body) => stmt.bind(body.salt ?? null, body.derived_at ?? null, body.device_fingerprint ?? null, body.is_active ?? null, body.erased_at ?? null, body.device_id ?? null, body.key_status ?? null, body.passphrase_strength ?? null, body.key_algorithm ?? null, body.key_iterations ?? null, user.tenant)),
+      rows.map((body) => stmt.bind(body.derived_key ?? null, body.salt ?? null, body.iterations ?? null, body.device_fingerprint ?? null, body.created_at ?? null, body.is_active ?? null, body.device_id ?? null, user.tenant)),
     );
     const ids = out.flatMap((r) => (r.results ?? []).map((x) => x.id));
     for (const id of ids) await audit(env, user, "create", "encryption_key", id, null);
@@ -231,19 +229,11 @@ export const updateEncryption_key: UpdateEncryption_keyHandler = async (req, env
   if (!body) return json({ error: "invalid body" }, 400);
   const invalid = validate(body, true);
   if (invalid) return json({ error: invalid }, 400);
-  const next = body.key_status;
-  if (next !== undefined && next !== null) {
-    const cur = await env.DB.prepare("SELECT key_status FROM encryption_keys WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<{ key_status: string }>();
-    if (!cur) return json({ error: "not found" }, 404);
-    const allowed = WORKFLOW[cur.key_status] ?? [];
-    if (next !== cur.key_status && !allowed.includes(next))
-      return json({ error: "invalid key_status transition from " + cur.key_status + "; allowed: " + (allowed.length ? allowed.join(", ") : "none") }, 409);
-  }
   const tag = (req.headers.get("if-match") ?? new URL(req.url).searchParams.get("if_match") ?? "").replace(/^W\//, "").replace(/"/g, "").trim();
   const want = tag ? Math.trunc(Number(tag)) : NaN;
   if (tag && !Number.isInteger(want)) return json({ error: "if-match must be a version number" }, 400);
-  let sql = "UPDATE encryption_keys SET salt = COALESCE(?, salt), derived_at = COALESCE(?, derived_at), device_fingerprint = COALESCE(?, device_fingerprint), is_active = COALESCE(?, is_active), erased_at = COALESCE(?, erased_at), device_id = COALESCE(?, device_id), key_status = COALESCE(?, key_status), passphrase_strength = COALESCE(?, passphrase_strength), key_algorithm = COALESCE(?, key_algorithm), key_iterations = COALESCE(?, key_iterations), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
-  const args: unknown[] = [body.salt ?? null, body.derived_at ?? null, body.device_fingerprint ?? null, body.is_active ?? null, body.erased_at ?? null, body.device_id ?? null, body.key_status ?? null, body.passphrase_strength ?? null, body.key_algorithm ?? null, body.key_iterations ?? null, params.id, user.tenant];
+  let sql = "UPDATE encryption_keys SET derived_key = COALESCE(?, derived_key), salt = COALESCE(?, salt), iterations = COALESCE(?, iterations), device_fingerprint = COALESCE(?, device_fingerprint), created_at = COALESCE(?, created_at), is_active = COALESCE(?, is_active), device_id = COALESCE(?, device_id), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
+  const args: unknown[] = [body.derived_key ?? null, body.salt ?? null, body.iterations ?? null, body.device_fingerprint ?? null, body.created_at ?? null, body.is_active ?? null, body.device_id ?? null, params.id, user.tenant];
   if (Number.isInteger(want)) { sql += " AND row_version = ?"; args.push(want); }
   try {
     const res = await env.DB.prepare(sql).bind(...args).run();

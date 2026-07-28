@@ -1,7 +1,7 @@
 // GENERATED from the manifest. Do not edit.
 import { json, noteTenant, readJson, requestId } from "../lib/http";
 import { ADMIN_ROLES, audit, requireRole, requireSession, WRITE_ROLES } from "./auth";
-import type { Sync_policy, Bucket, ListSync_policysHandler, ListSync_policysStatsHandler, GetSync_policyHandler, CreateSync_policyHandler, CreateSync_policyBulkHandler, UpdateSync_policyHandler, DeleteSync_policyHandler } from "../types";
+import type { Sync_threshold, Bucket, ListSync_thresholdsHandler, ListSync_thresholdsStatsHandler, GetSync_thresholdHandler, CreateSync_thresholdHandler, CreateSync_thresholdBulkHandler, UpdateSync_thresholdHandler, DeleteSync_thresholdHandler } from "../types";
 
 function constraintError(err: unknown): string | null {
   const msg = err instanceof Error ? err.message : String(err);
@@ -14,8 +14,8 @@ function constraintError(err: unknown): string | null {
 }
 
 type Spec = { name: string; type: "text" | "integer" | "real" | "date" | "bool" | "enum"; values?: string[] };
-const FIELDS: Spec[] = [{ name: "name", type: "text" }, { name: "min_battery_level", type: "integer" }, { name: "min_network_strength", type: "integer" }, { name: "retry_interval", type: "integer" }, { name: "is_active", type: "bool" }, { name: "created_at", type: "date" }, { name: "updated_at", type: "date" }, { name: "zone_id", type: "integer" }];
-function validate(body: Partial<Sync_policy>, partial = false): string | null {
+const FIELDS: Spec[] = [{ name: "max_attempts", type: "integer" }, { name: "action", type: "enum", values: ["erase_key","notify_user","disable_device"] }, { name: "is_active", type: "bool" }, { name: "created_at", type: "date" }, { name: "updated_at", type: "date" }];
+function validate(body: Partial<Sync_threshold>, partial = false): string | null {
   const b = body as Record<string, unknown>;
   for (const { name, type, values } of FIELDS) {
     const v = b[name];
@@ -33,15 +33,17 @@ function validate(body: Partial<Sync_policy>, partial = false): string | null {
   return null;
 }
 
-const SORTABLE: string[] = ["id","name","min_battery_level","min_network_strength","retry_interval","is_active","created_at","updated_at","zone_id"];
-const SEARCHABLE: string[] = ["name","created_at","updated_at"];
-const FILTERABLE: string[] = ["zone_id"];
-const MATCHABLE: string[] = [];
+const WORKFLOW: Record<string, string[]> = {"erase_key":["notify_user","disable_device"],"notify_user":["erase_key","disable_device"],"disable_device":["erase_key","notify_user"]};
+
+const SORTABLE: string[] = ["id","max_attempts","action","is_active","created_at","updated_at"];
+const SEARCHABLE: string[] = ["action","created_at","updated_at"];
+const FILTERABLE: string[] = [];
+const MATCHABLE: string[] = ["action"];
 const DATED: string[] = ["created_at","updated_at"];
-const GROUPABLE: string[] = ["is_active","created_at","updated_at","zone_id"];
-const MEASURABLE: string[] = ["min_battery_level","min_network_strength","retry_interval"];
+const GROUPABLE: string[] = ["action","is_active","created_at","updated_at"];
+const MEASURABLE: string[] = ["max_attempts"];
 /** ref column -> the parent it names, and what a rollup may group by over there. */
-const HOPS: Record<string, { table: string; cols: string[] }> = {"zone_id":{"table":"connectivity_zones","cols":["last_updated","status"]}};
+const HOPS: Record<string, { table: string; cols: string[] }> = {};
 const GROUPINGS: string[] = [...GROUPABLE, ...Object.entries(HOPS).flatMap(([r, h]) => h.cols.map((c) => r + "." + c))];
 
 /** The tenant + live + filter WHERE for this entity, or a message to 400 with. */
@@ -78,7 +80,7 @@ function scope(url: URL, tenant: string): { where: string; args: unknown[] } | s
   return { where, args };
 }
 
-export const listSync_policys: ListSync_policysHandler = async (req, env) => {
+export const listSync_thresholds: ListSync_thresholdsHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
@@ -91,7 +93,7 @@ export const listSync_policys: ListSync_policysHandler = async (req, env) => {
   const sc = scope(url, user.tenant);
   if (typeof sc === "string") return json({ error: sc }, 400);
   const { where, args } = sc;
-  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(min_battery_level), 0) AS s_min_battery_level, COALESCE(SUM(min_network_strength), 0) AS s_min_network_strength, COALESCE(SUM(retry_interval), 0) AS s_retry_interval FROM sync_policys WHERE " + where).bind(...args).first<Record<string, number>>();
+  const counted = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(max_attempts), 0) AS s_max_attempts FROM sync_thresholds WHERE " + where).bind(...args).first<Record<string, number>>();
   let pageWhere = where;
   const pageArgs = [...args];
   const cursor = Math.trunc(Number(url.searchParams.get("cursor")));
@@ -100,17 +102,17 @@ export const listSync_policys: ListSync_policysHandler = async (req, env) => {
     pageArgs.push(cursor);
   }
   const { results } = await env.DB.prepare(
-    "SELECT * FROM sync_policys WHERE " + pageWhere + " ORDER BY " + sort + " " + dir + " LIMIT ? OFFSET ?",
-  ).bind(...pageArgs, per, cursor > 0 && sort === "id" ? 0 : (page - 1) * per).all<Sync_policy>();
+    "SELECT * FROM sync_thresholds WHERE " + pageWhere + " ORDER BY " + sort + " " + dir + " LIMIT ? OFFSET ?",
+  ).bind(...pageArgs, per, cursor > 0 && sort === "id" ? 0 : (page - 1) * per).all<Sync_threshold>();
   const out = json(results);
   out.headers.set("x-total-count", String(counted?.n ?? results.length));
   const last = results[results.length - 1];
   if (sort === "id" && last && results.length === per) out.headers.set("x-next-cursor", String(last.id));
-  if (counted) out.headers.set("x-totals", JSON.stringify({ min_battery_level: counted.s_min_battery_level ?? 0, min_network_strength: counted.s_min_network_strength ?? 0, retry_interval: counted.s_retry_interval ?? 0 }));
+  if (counted) out.headers.set("x-totals", JSON.stringify({ max_attempts: counted.s_max_attempts ?? 0 }));
   return out;
 };
 
-export const listSync_policysStats: ListSync_policysStatsHandler = async (req, env) => {
+export const listSync_thresholdsStats: ListSync_thresholdsStatsHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
@@ -132,8 +134,8 @@ export const listSync_policysStats: ListSync_policysStatsHandler = async (req, e
   const limit = Math.min(1000, Math.max(1, Math.trunc(Number(url.searchParams.get("limit"))) || 200));
   const key = hop ? '"hop.key"' : by;
   const from = hop
-    ? "sync_policys JOIN (SELECT id AS \"hop.id\", " + hopCol + " AS \"hop.key\" FROM " + hop.table + " WHERE tenant = ? AND deleted_at IS NULL) ON \"hop.id\" = " + by.slice(0, dot)
-    : "sync_policys";
+    ? "sync_thresholds JOIN (SELECT id AS \"hop.id\", " + hopCol + " AS \"hop.key\" FROM " + hop.table + " WHERE tenant = ? AND deleted_at IS NULL) ON \"hop.id\" = " + by.slice(0, dot)
+    : "sync_thresholds";
   const { results } = await env.DB.prepare(
     "SELECT " + key + " AS key, COUNT(*) AS count, " + agg +
     " FROM " + from + " WHERE " + sc.where + " GROUP BY " + key + " ORDER BY count DESC LIMIT ?",
@@ -141,32 +143,32 @@ export const listSync_policysStats: ListSync_policysStatsHandler = async (req, e
   return json(results);
 };
 
-export const getSync_policy: GetSync_policyHandler = async (req, env, params) => {
+export const getSync_threshold: GetSync_thresholdHandler = async (req, env, params) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
-  const row = await env.DB.prepare("SELECT * FROM sync_policys WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<Sync_policy>();
+  const row = await env.DB.prepare("SELECT * FROM sync_thresholds WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<Sync_threshold>();
   if (!row) return json({ error: "not found" }, 404);
   const out = json(row);
   out.headers.set("etag", 'W/"' + row.row_version + '"');
   return out;
 };
 
-export const createSync_policy: CreateSync_policyHandler = async (req, env) => {
+export const createSync_threshold: CreateSync_thresholdHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
   const denied = requireRole(user, WRITE_ROLES);
   if (denied) return denied;
-  const body = await readJson<Partial<Sync_policy>>(req);
+  const body = await readJson<Partial<Sync_threshold>>(req);
   if (!body) return json({ error: "invalid body" }, 400);
   const invalid = validate(body);
   if (invalid) return json({ error: invalid }, 400);
   const key = (req.headers.get("idempotency-key") ?? new URL(req.url).searchParams.get("idempotency_key") ?? "").trim().slice(0, 200);
   if (key) {
-    const seen = await env.DB.prepare("SELECT row_id FROM idempotency WHERE tenant = ? AND key = ? AND endpoint = ?").bind(user.tenant, key, "createSync_policy").first<{ row_id: number }>();
+    const seen = await env.DB.prepare("SELECT row_id FROM idempotency WHERE tenant = ? AND key = ? AND endpoint = ?").bind(user.tenant, key, "createSync_threshold").first<{ row_id: number }>();
     if (seen) {
-      const prior = await env.DB.prepare("SELECT * FROM sync_policys WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(seen.row_id, user.tenant).first<Sync_policy>();
+      const prior = await env.DB.prepare("SELECT * FROM sync_thresholds WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(seen.row_id, user.tenant).first<Sync_threshold>();
       if (prior) {
         const replay = json(prior);
         replay.headers.set("idempotent-replay", "true");
@@ -175,12 +177,12 @@ export const createSync_policy: CreateSync_policyHandler = async (req, env) => {
     }
   }
   try {
-    const res = await env.DB.prepare("INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(body.name ?? null, body.min_battery_level ?? null, body.min_network_strength ?? null, body.retry_interval ?? null, body.is_active ?? null, body.created_at ?? null, body.updated_at ?? null, body.zone_id ?? null, user.tenant).run();
-    const row = await env.DB.prepare("SELECT * FROM sync_policys WHERE id = ?").bind(res.meta.last_row_id).first<Sync_policy>();
+    const res = await env.DB.prepare("INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at, tenant) VALUES (?, ?, ?, ?, ?, ?)").bind(body.max_attempts ?? null, body.action ?? null, body.is_active ?? null, body.created_at ?? null, body.updated_at ?? null, user.tenant).run();
+    const row = await env.DB.prepare("SELECT * FROM sync_thresholds WHERE id = ?").bind(res.meta.last_row_id).first<Sync_threshold>();
     if (key)
       await env.DB.prepare("INSERT OR IGNORE INTO idempotency (tenant, key, endpoint, row_id, at) VALUES (?, ?, ?, ?, ?)")
-        .bind(user.tenant, key, "createSync_policy", Number(res.meta.last_row_id), new Date().toISOString()).run();
-    await audit(env, user, "create", "sync_policy", Number(res.meta.last_row_id), row);
+        .bind(user.tenant, key, "createSync_threshold", Number(res.meta.last_row_id), new Date().toISOString()).run();
+    await audit(env, user, "create", "sync_threshold", Number(res.meta.last_row_id), row);
     return row ? json(row) : json({ error: "insert failed" }, 500);
   } catch (err) {
     const bad = constraintError(err);
@@ -189,28 +191,28 @@ export const createSync_policy: CreateSync_policyHandler = async (req, env) => {
   }
 };
 
-export const createSync_policyBulk: CreateSync_policyBulkHandler = async (req, env) => {
+export const createSync_thresholdBulk: CreateSync_thresholdBulkHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
   const denied = requireRole(user, WRITE_ROLES);
   if (denied) return denied;
-  const payload = await readJson<{ rows?: Partial<Sync_policy>[] }>(req);
+  const payload = await readJson<{ rows?: Partial<Sync_threshold>[] }>(req);
   const rows = payload?.rows;
   if (!Array.isArray(rows)) return json({ error: "expected { rows: [...] }" }, 400);
   if (!rows.length) return json({ error: "rows is empty" }, 400);
   if (rows.length > 100) return json({ error: "at most 100 rows per batch; got " + rows.length }, 400);
   for (let i = 0; i < rows.length; i++) {
-    const bad = validate(rows[i] as Partial<Sync_policy>);
+    const bad = validate(rows[i] as Partial<Sync_threshold>);
     if (bad) return json({ error: "row " + i + ": " + bad }, 400);
   }
   try {
-    const stmt = env.DB.prepare("INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id");
+    const stmt = env.DB.prepare("INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at, tenant) VALUES (?, ?, ?, ?, ?, ?) RETURNING id");
     const out = await env.DB.batch<{ id: number }>(
-      rows.map((body) => stmt.bind(body.name ?? null, body.min_battery_level ?? null, body.min_network_strength ?? null, body.retry_interval ?? null, body.is_active ?? null, body.created_at ?? null, body.updated_at ?? null, body.zone_id ?? null, user.tenant)),
+      rows.map((body) => stmt.bind(body.max_attempts ?? null, body.action ?? null, body.is_active ?? null, body.created_at ?? null, body.updated_at ?? null, user.tenant)),
     );
     const ids = out.flatMap((r) => (r.results ?? []).map((x) => x.id));
-    for (const id of ids) await audit(env, user, "create", "sync_policy", id, null);
+    for (const id of ids) await audit(env, user, "create", "sync_threshold", id, null);
     return json({ created: ids.length, ids });
   } catch (err) {
     const bad = constraintError(err);
@@ -219,31 +221,39 @@ export const createSync_policyBulk: CreateSync_policyBulkHandler = async (req, e
   }
 };
 
-export const updateSync_policy: UpdateSync_policyHandler = async (req, env, params) => {
+export const updateSync_threshold: UpdateSync_thresholdHandler = async (req, env, params) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
   const denied = requireRole(user, WRITE_ROLES);
   if (denied) return denied;
-  const body = await readJson<Partial<Sync_policy>>(req);
+  const body = await readJson<Partial<Sync_threshold>>(req);
   if (!body) return json({ error: "invalid body" }, 400);
   const invalid = validate(body, true);
   if (invalid) return json({ error: invalid }, 400);
+  const next = body.action;
+  if (next !== undefined && next !== null) {
+    const cur = await env.DB.prepare("SELECT action FROM sync_thresholds WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<{ action: string }>();
+    if (!cur) return json({ error: "not found" }, 404);
+    const allowed = WORKFLOW[cur.action] ?? [];
+    if (next !== cur.action && !allowed.includes(next))
+      return json({ error: "invalid action transition from " + cur.action + "; allowed: " + (allowed.length ? allowed.join(", ") : "none") }, 409);
+  }
   const tag = (req.headers.get("if-match") ?? new URL(req.url).searchParams.get("if_match") ?? "").replace(/^W\//, "").replace(/"/g, "").trim();
   const want = tag ? Math.trunc(Number(tag)) : NaN;
   if (tag && !Number.isInteger(want)) return json({ error: "if-match must be a version number" }, 400);
-  let sql = "UPDATE sync_policys SET name = COALESCE(?, name), min_battery_level = COALESCE(?, min_battery_level), min_network_strength = COALESCE(?, min_network_strength), retry_interval = COALESCE(?, retry_interval), is_active = COALESCE(?, is_active), created_at = COALESCE(?, created_at), updated_at = COALESCE(?, updated_at), zone_id = COALESCE(?, zone_id), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
-  const args: unknown[] = [body.name ?? null, body.min_battery_level ?? null, body.min_network_strength ?? null, body.retry_interval ?? null, body.is_active ?? null, body.created_at ?? null, body.updated_at ?? null, body.zone_id ?? null, params.id, user.tenant];
+  let sql = "UPDATE sync_thresholds SET max_attempts = COALESCE(?, max_attempts), action = COALESCE(?, action), is_active = COALESCE(?, is_active), created_at = COALESCE(?, created_at), updated_at = COALESCE(?, updated_at), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
+  const args: unknown[] = [body.max_attempts ?? null, body.action ?? null, body.is_active ?? null, body.created_at ?? null, body.updated_at ?? null, params.id, user.tenant];
   if (Number.isInteger(want)) { sql += " AND row_version = ?"; args.push(want); }
   try {
     const res = await env.DB.prepare(sql).bind(...args).run();
     if (!res.meta.changes) {
-      const cur = await env.DB.prepare("SELECT row_version FROM sync_policys WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<{ row_version: number }>();
+      const cur = await env.DB.prepare("SELECT row_version FROM sync_thresholds WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<{ row_version: number }>();
       if (!cur) return json({ error: "not found" }, 404);
       return json({ error: "version conflict: this record was changed by someone else (now at version " + cur.row_version + ")", requestId: requestId(req) }, 409);
     }
-    const row = await env.DB.prepare("SELECT * FROM sync_policys WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<Sync_policy>();
-    if (row) await audit(env, user, "update", "sync_policy", Number(params.id), body);
+    const row = await env.DB.prepare("SELECT * FROM sync_thresholds WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(params.id, user.tenant).first<Sync_threshold>();
+    if (row) await audit(env, user, "update", "sync_threshold", Number(params.id), body);
     const out = row ? json(row) : json({ error: "not found" }, 404);
     if (row) out.headers.set("etag", 'W/"' + row.row_version + '"');
     return out;
@@ -254,24 +264,24 @@ export const updateSync_policy: UpdateSync_policyHandler = async (req, env, para
   }
 };
 
-export const deleteSync_policy: DeleteSync_policyHandler = async (req, env, params) => {
+export const deleteSync_threshold: DeleteSync_thresholdHandler = async (req, env, params) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
   const denied = requireRole(user, WRITE_ROLES);
   if (denied) return denied;
-  const res = await env.DB.prepare("UPDATE sync_policys SET deleted_at = ? WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(new Date().toISOString(), params.id, user.tenant).run();
-  if (res.meta.changes) await audit(env, user, "delete", "sync_policy", Number(params.id), null);
+  const res = await env.DB.prepare("UPDATE sync_thresholds SET deleted_at = ? WHERE id = ? AND tenant = ? AND deleted_at IS NULL").bind(new Date().toISOString(), params.id, user.tenant).run();
+  if (res.meta.changes) await audit(env, user, "delete", "sync_threshold", Number(params.id), null);
   return res.meta.changes ? json({ ok: true }) : json({ error: "not found" }, 404);
 };
 
-export const deleteSync_policyRestore: DeleteSync_policyHandler = async (req, env, params) => {
+export const deleteSync_thresholdRestore: DeleteSync_thresholdHandler = async (req, env, params) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
   const denied = requireRole(user, ADMIN_ROLES);
   if (denied) return denied;
-  const res = await env.DB.prepare("UPDATE sync_policys SET deleted_at = NULL WHERE id = ? AND tenant = ? AND deleted_at IS NOT NULL").bind(params.id, user.tenant).run();
-  if (res.meta.changes) await audit(env, user, "restore", "sync_policy", Number(params.id), null);
+  const res = await env.DB.prepare("UPDATE sync_thresholds SET deleted_at = NULL WHERE id = ? AND tenant = ? AND deleted_at IS NOT NULL").bind(params.id, user.tenant).run();
+  if (res.meta.changes) await audit(env, user, "restore", "sync_threshold", Number(params.id), null);
   return res.meta.changes ? json({ ok: true }) : json({ error: "not found" }, 404);
 };

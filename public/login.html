@@ -161,9 +161,8 @@ body { font: 15px/1.55 var(--font-body); background: var(--paper); color: var(--
 .auth-main { display: flex; align-items: center; justify-content: center; padding: clamp(1.5rem, 5vw, 3.5rem) var(--space-4); }
 .auth-aside { position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--space-4);
   background: var(--surface); padding: clamp(2rem, 6vw, 4rem) clamp(1.5rem, 5vw, 3.5rem); overflow: hidden; }
-.auth-grid { grid-template-columns: minmax(0, 1fr); align-content: start; }
-.auth-aside { order: 1; border-block-end: 1px solid var(--line); --deck-ratio: 20 / 9; --fan: .5; }
-.auth-aside .stage { max-width: min(100%, 40rem); margin-inline: 0; }
+.auth-grid { grid-template-columns: 1fr 1.02fr; }
+.auth-aside { order: 1; border-inline-end: 1px solid var(--line); }
 .auth-main { order: 2; }
 .aside-h { font-family: var(--font-display); font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.5rem); font-weight: 750;
   letter-spacing: -0.03em; line-height: 1.08; margin: 0; max-width: 24ch; text-wrap: balance; }
@@ -256,7 +255,7 @@ input[aria-invalid="true"] { border-color: var(--coral); }
   --font-body: "Roboto Mono", "Hanken Grotesque", system-ui, -apple-system, sans-serif;
 }</style>
 </head>
-<body class="ch-pipeline dom-field comp-2">
+<body class="ch-pipeline dom-field comp-0">
   <div class="auth-grid">
     <main class="auth-main">
       <div class="auth-card">
@@ -305,30 +304,25 @@ input[aria-invalid="true"] { border-color: var(--coral); }
       </div>
     </main>
     <aside class="auth-aside">
-      <h2 class="aside-h">Every reading, from pending to erased.</h2>
-      <p class="aside-lede">Field service for readings, sync logs, encryption keys, erasure policies, anomalies, grid cells, technicians, sites, reading types, sync policies, devices, permissions, audit logs, regions, maintenance schedules, photo blobs and sync sessions. 4 states and 31 legal moves, enforced on every update.</p>
+      <h2 class="aside-h">Every site, from active to decommissioned.</h2>
+      <p class="aside-lede">Field service for readings, sites, sync logs, encryption keys, devices, outliers, sync thresholds, passphrases, daily aggregates, connectivity zones, reading histories, site visits, equipments, calibration logs, notifications, sync policies, audit trails and maintenance schedules. 3 states and 39 legal moves, enforced on every update.</p>
       <div class="stage" aria-hidden="true">
-      <span class="stage-cap">Reading workflow</span>
+      <span class="stage-cap">Site workflow</span>
       <div class="deck">
         <div class="tile" style="--i:0">
-          <b>Pending</b>
+          <b>Active</b>
           <span>2 ways out</span>
-          <dl class="tile-rows"><dt>Synced</dt><dd>→</dd><dt>Failed</dt><dd>→</dd></dl>
+          <dl class="tile-rows"><dt>Maintenance</dt><dd>→</dd><dt>Decommissioned</dt><dd>→</dd></dl>
         </div>
         <div class="tile" style="--i:1">
-          <b>Synced</b>
-          <span>1 way out</span>
-          <dl class="tile-rows"><dt>Erased</dt><dd>→</dd></dl>
+          <b>Maintenance</b>
+          <span>2 ways out</span>
+          <dl class="tile-rows"><dt>Active</dt><dd>→</dd><dt>Decommissioned</dt><dd>→</dd></dl>
         </div>
         <div class="tile" style="--i:2">
-          <b>Failed</b>
-          <span>2 ways out</span>
-          <dl class="tile-rows"><dt>Pending</dt><dd>→</dd><dt>Erased</dt><dd>→</dd></dl>
-        </div>
-        <div class="tile" style="--i:3">
-          <b>Erased</b>
+          <b>Decommissioned</b>
           <span>final state</span>
-          <dl class="tile-rows"><dt>Capture timestamp</dt><dd>date</dd><dt>Latitude</dt><dd>real</dd><dt>Longitude</dt><dd>real</dd><dt>Numeric value</dt><dd>real</dd><dt>Photo blob id</dt><dd>text</dd></dl>
+          <dl class="tile-rows"><dt>Name</dt><dd>text</dd><dt>Latitude</dt><dd>real</dd><dt>Longitude</dt><dd>real</dd><dt>Mean value</dt><dd>real</dd><dt>Std dev</dt><dd>real</dd></dl>
         </div>
       </div>
     </div>
