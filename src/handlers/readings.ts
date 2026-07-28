@@ -4,6 +4,8 @@ import type {
   CreateReadingResponse,
   ListReadingsHandler,
   ListReadingsResponse,
+  UpdateReadingSyncStatusHandler,
+  UpdateReadingSyncStatusResponse,
 } from "../types";
 
 /** Parse multipart/form-data to extract fields. */
@@ -262,4 +264,88 @@ export const listReadings: ListReadingsHandler = async (
   const result = await env.DB.prepare(query).bind(...params).all();
 
   return (result.results || []) as ListReadingsResponse;
+};
+
+/** Update reading sync status. PUT /api/readings/:id */
+export const updateReadingSyncStatus: UpdateReadingSyncStatusHandler = async (
+  request: Request,
+  env: { DB: D1Database },
+): Promise<UpdateReadingSyncStatusResponse> => {
+  const tenant = "default";
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split("/");
+  const idStr = pathParts[pathParts.length - 1];
+  const id = parseInt(idStr, 10);
+
+  if (isNaN(id)) {
+    return {
+      error: "Invalid reading ID",
+    };
+  }
+
+  let body: { sync_status?: string; sync_attempts?: number };
+  try {
+    body = await request.json();
+  } catch {
+    return {
+      error: "Invalid JSON body",
+    };
+  }
+
+  const { sync_status, sync_attempts } = body;
+
+  // Validate sync_status
+  const validStatuses = ["pending", "syncing", "synced", "failed"];
+  if (sync_status && !validStatuses.includes(sync_status)) {
+    return {
+      error: `Invalid sync_status. Must be one of: ${validStatuses.join(", ")}`,
+    };
+  }
+
+  // Build update query dynamically
+  const updates: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (sync_status) {
+    updates.push("sync_status = ?");
+    params.push(sync_status);
+  }
+
+  if (typeof sync_attempts === "number") {
+    updates.push("sync_attempts = ?");
+    params.push(sync_attempts);
+  }
+
+  if (updates.length === 0) {
+    return {
+      error: "No fields to update",
+    };
+  }
+
+  params.push(id, tenant);
+
+  const query = `UPDATE readings SET ${updates.join(", ")} WHERE id = ? AND tenant = ?`;
+
+  const result = await env.DB.prepare(query).bind(...params).run();
+
+  if (!result.success) {
+    return {
+      error: "Failed to update reading",
+    };
+  }
+
+  if (result.meta.changes === 0) {
+    return {
+      error: "Reading not found",
+    };
+  }
+
+  // Get the updated row
+  const updatedRow = await env.DB.prepare(
+    "SELECT * FROM readings WHERE id = ? AND tenant = ?"
+  )
+    .bind(id, tenant)
+    .first();
+
+  return updatedRow as UpdateReadingSyncStatusResponse;
 };

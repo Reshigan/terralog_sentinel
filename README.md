@@ -24,6 +24,105 @@ bun run deploy
 
 ---
 
+## UI Overview
+
+### Dark Mode — Main Capture Form
+
+The primary interface is a four-step wizard optimized for one-handed mobile operation:
+
+```
+┌─────────────────────────────────────┐
+│ Terminus                     ● Offline │  ← Status indicator (amber = syncing, green = online)
+├─────────────────────────────────────┤
+│ ● ○ ○ ○                               │  ← Step progress dots
+├─────────────────────────────────────┤
+│ ┌─────────────────────────────────┐  │
+│ │ Site                             │  │
+│ │ Pick the site you're at...       │  │
+│ │                                  │  │
+│ │ Site name                        │  │
+│ │ [Select a site…           ▼]    │  │
+│ └─────────────────────────────────┘  │
+│                                     │
+│ [Continue]                          │  ← Primary CTA (amber background)
+└─────────────────────────────────────┘
+```
+
+- **Typography**: Rajdhani 600 for headings, IBM Plex Mono for body/data
+- **Color tokens**: Surface `#0d0f11`, accent `#f5a623`, ink `#e8ecf0`
+- **Touch targets**: Minimum 48px height
+- **Contrast**: WCAG AAA (7:1) on dark mode
+
+### Photo Capture Step
+
+```
+┌─────────────────────────────────────┐
+│ Photo                               │
+│ One frame is enough. The photo is  │
+│ encrypted on-device before it      │
+│ ever leaves your phone.            │
+│                                     │
+│ ┌─────────────────────────────────┐ │
+│ │                                 │ │
+│ │      [Camera preview area]     │ │  ← 1:1 aspect ratio, rounded corners
+│ │                                 │ │
+│ │      No photo yet              │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ [Capture]  [Retake]                 │
+│                                     │
+│ [Back]           [Continue]        │
+└─────────────────────────────────────┘
+```
+
+### Location & Value Entry
+
+```
+┌─────────────────────────────────────┐
+│ Location                            │
+│ GPS reads once. Re-tap if indoors  │
+│ and the first fix was poor.        │
+│                                     │
+│ Latitude      Longitude             │
+│ 34.0522      -118.2437             │  ← Read-only fields after GPS fix
+│                                     │
+│ [Get fix]  [Skip (manual)]         │
+│                                     │
+│ Reading                             │
+│ Enter the meter or gauge value...  │
+│                                     │
+│ Numeric value                       │
+│ [________________]                  │
+│                                     │
+│ Notes (optional)                    │
+│ [________________________]          │
+│                                     │
+│ [Back]           [Save offline]     │
+└─────────────────────────────────────┘
+```
+
+### Reading List (Synced View)
+
+```
+┌─────────────────────────────────────┐
+│ Readings              [+ Add New]  │
+├─────────────────────────────────────┤
+│ ┌─────────────────────────────────┐ │
+│ │ Site: North Tower    ● Synced  │ │  ← Green badge = synced
+│ │ 34.0522, -118.2437             │ │
+│ │ Value: 142.5    2 min ago      │ │
+│ │ [Photo thumbnail]               │ │
+│ └─────────────────────────────────┘ │
+│ ┌─────────────────────────────────┐ │
+│ │ Site: South Basin    ● Pending │ │  ← Amber badge = pending sync
+│ │ 34.0498, -118.2481             │ │
+│ │ Value: 89.2     15 min ago     │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+```
+
+---
+
 ## Architecture
 
 | Layer | Technology | Purpose |

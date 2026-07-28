@@ -1,58 +1,62 @@
--- GENERATED seed (skipped in tests, applied on deploy).
-INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level) VALUES ('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Mobile Safari/537.36', 1080, 1920, 4, '2026-03-14', 'tech1@field.example', 'active', 85);
-INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level) VALUES ('Atlas Device', 125, 125, 125, '2026-01-15', 'ops2@device.example.com', 'lost', 125);
-INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level) VALUES ('Meridian Device', 150, 150, 150, '2026-01-24', 'ops3@device.example.com', 'retired', 150);
-INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at) VALUES (5, 'erase_key', 1, '2026-03-01', '2026-03-01');
-INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at) VALUES (125, 'notify_user', 0, '2026-01-15', '2026-01-15');
-INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at) VALUES (150, 'disable_device', 1, '2026-01-24', '2026-01-24');
-INSERT INTO passphrases (hash, salt, is_set, set_at, device_id, failed_attempts) VALUES ('pbkdf2_sha256_hash', 'passphrase_salt', 1, '2026-03-14', 1, 0);
-INSERT INTO passphrases (hash, salt, is_set, set_at, device_id, failed_attempts) VALUES ('Atlas Passphrase', 'Atlas Passphrase', 0, '2026-01-15', 2, 125);
-INSERT INTO passphrases (hash, salt, is_set, set_at, device_id, failed_attempts) VALUES ('Meridian Passphrase', 'Meridian Passphrase', 1, '2026-01-24', 3, 150);
-INSERT INTO connectivity_zones (name, polygon_geojson, sync_success_rate, last_updated, technician_email, status) VALUES ('Zone_A', '{"type":"Polygon","coordinates":[[[-118.25,34.04],[-118.23,34.04],[-118.23,34.06],[-118.25,34.06],[-118.25,34.04]]]}', 0.85, '2026-03-14', 'supervisor@field.example', 'active');
-INSERT INTO connectivity_zones (name, polygon_geojson, sync_success_rate, last_updated, technician_email, status) VALUES ('Atlas Connectivity zone', 'Atlas Connectivity zone', 2190.75, '2026-01-15', 'ops2@connectivityzone.example.com', 'monitoring');
-INSERT INTO connectivity_zones (name, polygon_geojson, sync_success_rate, last_updated, technician_email, status) VALUES ('Meridian Connectivity zone', 'Meridian Connectivity zone', 3131, '2026-01-24', 'ops3@connectivityzone.example.com', 'degraded');
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('supervisor@field.example', 'outlier_detected', 'Outlier detected at Pipeline_Alpha_03', 0, '2026-03-14T10:10:00Z', 1, 'reading');
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('ops2@notification.example.com', 'outlier_detected', 'Atlas Notification', 0, '2026-01-15', 125, 'site_visit');
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('ops3@notification.example.com', 'visit_reminder', 'Meridian Notification', 1, '2026-01-24', 150, 'equipment');
-INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id) VALUES ('Standard', 20, 3, 3600, 1, '2026-03-01', '2026-03-01', 1);
-INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id) VALUES ('Atlas Sync policy', 125, 125, 125, 0, '2026-01-15', '2026-01-15', 2);
-INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id) VALUES ('Meridian Sync policy', 150, 150, 150, 1, '2026-01-24', '2026-01-24', 3);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('reading', 1, 'create', '2026-03-14T10:00:00Z', 'tech1@field.example', '{"photo":"base64_encoded_jpeg","numeric_value":48.5}', 1);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('Atlas Audit trail', 125, 'update', '2026-01-15', 'Atlas Audit trail', 'Atlas Audit trail', 2);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('Meridian Audit trail', 150, 'delete', '2026-01-24', 'Meridian Audit trail', 'Meridian Audit trail', 3);
-INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id) VALUES ('Pipeline_Alpha_03', 34.0522, -118.2437, 45.2, 3.1, '2026-03-14', 0.92, 'tech1@field.example', 'active', 1);
-INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id) VALUES ('Atlas Site', 125.5, 125.5, 2190.75, 125.5, '2026-01-15', 2190.75, 'ops2@site.example.com', 'maintenance', 2);
-INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id) VALUES ('Meridian Site', 150.5, 150.5, 3131, 150.5, '2026-01-24', 3131, 'ops3@site.example.com', 'decommissioned', 3);
-INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id) VALUES ('pbkdf2_sha256_derived_key', 'device_salt_sha256', 100000, 'Mozilla/5.0_1080_1920_4', '2026-03-14', 1, 1);
-INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id) VALUES ('Atlas Encryption key', 'Atlas Encryption key', 125, 'Atlas Encryption key', '2026-01-15', 0, 2);
-INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id) VALUES ('Meridian Encryption key', 'Meridian Encryption key', 150, 'Meridian Encryption key', '2026-01-24', 1, 3);
-INSERT INTO daily_aggregates (date, total_readings, synced_readings, failed_readings, avg_numeric_value, site_id, zone_id) VALUES ('2026-03-14', 1, 1, 0, 48.5, 1, 1);
-INSERT INTO daily_aggregates (date, total_readings, synced_readings, failed_readings, avg_numeric_value, site_id, zone_id) VALUES ('2026-01-15', 2190, 125, 125, 2190.75, 2, 2);
-INSERT INTO daily_aggregates (date, total_readings, synced_readings, failed_readings, avg_numeric_value, site_id, zone_id) VALUES ('2026-01-24', 3130, 150, 150, 3131, 3, 3);
-INSERT INTO equipments (serial_number, type, installation_date, last_calibration, site_id, status, warranty_expiry) VALUES ('SN-2026-001', 'sensor', '2026-01-15', '2026-02-20', 1, 'active', '2028-01-15');
-INSERT INTO equipments (serial_number, type, installation_date, last_calibration, site_id, status, warranty_expiry) VALUES ('EQU-1002', 'camera', '2026-01-15', '2026-01-15', 2, 'maintenance', '2026-01-15');
-INSERT INTO equipments (serial_number, type, installation_date, last_calibration, site_id, status, warranty_expiry) VALUES ('EQU-1003', 'gps_unit', '2026-01-24', '2026-01-24', 3, 'retired', '2026-01-24');
-INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email) VALUES (1, '2026-09-20', 'calibration', 'planned', 'Next calibration due', 'tech1@field.example');
-INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email) VALUES (2, '2026-01-15', 'corrective', 'completed', 'Maintenance schedule 2 reviewed by operations; no exceptions outstanding.', 'ops2@maintenanceschedule.example.com');
-INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email) VALUES (3, '2026-01-24', 'calibration', 'cancelled', 'Maintenance schedule 3 reviewed by operations; no exceptions outstanding.', 'ops3@maintenanceschedule.example.com');
-INSERT INTO site_visits (site_id, visit_date, purpose, notes, technician_email, status, equipment_id) VALUES (1, '2026-03-20', 'inspection', 'Routine inspection', 'tech1@field.example', 'planned', 1);
-INSERT INTO site_visits (site_id, visit_date, purpose, notes, technician_email, status, equipment_id) VALUES (2, '2026-01-15', 'maintenance', 'Site visit 2 reviewed by operations; no exceptions outstanding.', 'ops2@sitevisit.example.com', 'completed', 2);
-INSERT INTO site_visits (site_id, visit_date, purpose, notes, technician_email, status, equipment_id) VALUES (3, '2026-01-24', 'installation', 'Site visit 3 reviewed by operations; no exceptions outstanding.', 'ops3@sitevisit.example.com', 'cancelled', 3);
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id) VALUES ('base64_encoded_jpeg', 34.0522, -118.2437, 48.5, '2026-03-14T10:00:00Z', 'aes256_gcm_encrypted_json', 'synced', 1, 'terminus-field-uuidv5-hash', 1, 1, 1, NULL);
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id) VALUES ('Atlas Reading', 125.5, 125.5, 2190.75, '2026-01-15', 'Atlas Reading', 'synced', 125, 'Atlas Reading', 2, 2, 2, NULL);
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id) VALUES ('Meridian Reading', 150.5, 150.5, 3131, '2026-01-24', 'Meridian Reading', 'failed', 150, 'Meridian Reading', 3, 3, 3, NULL);
-INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id) VALUES (1, '2026-03-14T10:05:00Z', 'success', 200, '', 1);
-INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id) VALUES (2, '2026-01-15', 'failure', 125, 'Atlas Sync log', 2);
-INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id) VALUES (3, '2026-01-24', 'retry', 150, 'Meridian Sync log', 3);
-INSERT INTO outliers (reading_id, detected_at, z_score, is_resolved, resolved_at, resolved_by, site_id, notification_id) VALUES (1, '2026-03-14T10:10:00Z', 2.1, 0, NULL, '', 1, 1);
-INSERT INTO outliers (reading_id, detected_at, z_score, is_resolved, resolved_at, resolved_by, site_id, notification_id) VALUES (2, '2026-01-15', 125.5, 0, '2026-01-15', 'Atlas Outlier', 2, 2);
-INSERT INTO outliers (reading_id, detected_at, z_score, is_resolved, resolved_at, resolved_by, site_id, notification_id) VALUES (3, '2026-01-24', 150.5, 1, '2026-01-24', 'Meridian Outlier', 3, 3);
-INSERT INTO reading_historys (reading_id, changed_field, old_value, new_value, changed_at, changed_by, revision_id) VALUES (1, 'sync_status', 'pending', 'synced', '2026-03-14T10:05:00Z', 'system', 1);
-INSERT INTO reading_historys (reading_id, changed_field, old_value, new_value, changed_at, changed_by, revision_id) VALUES (2, 'Atlas Reading history', 'Atlas Reading history', 'Atlas Reading history', '2026-01-15', 'Atlas Reading history', 125);
-INSERT INTO reading_historys (reading_id, changed_field, old_value, new_value, changed_at, changed_by, revision_id) VALUES (3, 'Meridian Reading history', 'Meridian Reading history', 'Meridian Reading history', '2026-01-24', 'Meridian Reading history', 150);
-INSERT INTO calibration_logs (equipment_id, calibrated_at, calibrated_by, next_calibration, notes, status, reading_id) VALUES (1, '2026-02-20', 'tech1@field.example', '2026-08-20', 'Calibration passed', 'passed', 1);
-INSERT INTO calibration_logs (equipment_id, calibrated_at, calibrated_by, next_calibration, notes, status, reading_id) VALUES (2, '2025-12-01', 'ops2@calibration.example.com', '2026-01-01', 'Calibration expired - unit overdue for recalibration', 'expired', 2);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('custody_transfer', 1, 'transfer', '2026-03-14T11:00:00Z', 'tech1@field.example', '{"from":"tech1@field.example","to":"supervisor@field.example","reason":"End of shift handover","reading_count":1}', 1);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('custody_transfer', 2, 'transfer', '2026-01-15T09:00:00Z', 'ops2@device.example.com', '{"from":"ops2@device.example.com","to":"ops3@device.example.com","reason":"Equipment rotation","reading_count":125}', 2);
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('regulator@environment.gov', 'regulatory_export_pending', 'Regulatory data export ready for review - Period: Q1 2026', 0, '2026-03-15T08:00:00Z', 1, 'regulatory_export');
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('supervisor@field.example', 'regulatory_export_pending', 'Regulatory export awaiting approval - Site: Pipeline_Alpha_03', 0, '2026-03-15T08:00:00Z', 1, 'regulatory_export');
+-- Seed data for first-run UI demo.
+-- 3 demo readings with placeholder photos, GPS coordinates, and values.
+
+INSERT INTO readings (tenant, photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, created_at, row_version)
+VALUES (
+  'default',
+  NULL,
+  34.0522,
+  -118.2437,
+  48.5,
+  '2026-03-14T10:00:00Z',
+  '{"iv":"aGVsbG9fd29ybGRfdjEyMw==","data":"ZW5jcnlwdGVkX2Jsb2JfZGF0YQ=="}',
+  'pending',
+  0,
+  '5c4e6f32-9dad-51a1-80b4-00c04fd430c8',
+  1,
+  1,
+  1,
+  NULL,
+  '2026-03-14T10:00:00Z',
+  1
+);
+
+INSERT INTO readings (tenant, photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, created_at, row_version)
+VALUES (
+  'default',
+  NULL,
+  34.0589,
+  -118.2567,
+  52.3,
+  '2026-03-14T11:30:00Z',
+  '{"iv":"c2Vjb25kX3BsYWNlaG9sZGVyX2l2","data":"c2Vjb25kX2VuY3J5cHRlZF9ibG9i"}',
+  'pending',
+  0,
+  '7a8e9f12-3bc4-52b2-80b4-00c04fd430c8',
+  1,
+  1,
+  1,
+  NULL,
+  '2026-03-14T11:30:00Z',
+  1
+);
+
+INSERT INTO readings (tenant, photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, created_at, row_version)
+VALUES (
+  'default',
+  NULL,
+  34.0445,
+  -118.2398,
+  46.8,
+  '2026-03-14T14:15:00Z',
+  '{"iv":"dGhpcmRfcGxhY2Vob2xkZXJfaXY","data":"dGhpcmRfZW5jcnlwdGVkX2Jsb2I"}',
+  'pending',
+  0,
+  '9b1c2d34-5def-53c3-80b4-00c04fd430c8',
+  1,
+  1,
+  1,
+  NULL,
+  '2026-03-14T14:15:00Z',
+  1
+);
