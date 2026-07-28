@@ -1,7 +1,7 @@
 -- Seed data for first-run UI demo.
 -- 3 demo readings with placeholder photos, GPS coordinates, and values.
 
-INSERT INTO readings (photo, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
+INSERT INTO readings (photo, value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
   NULL,
   48.5,
@@ -16,7 +16,7 @@ VALUES (
   1
 );
 
-INSERT INTO readings (photo, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
+INSERT INTO readings (photo, value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
   NULL,
   52.3,
@@ -31,7 +31,7 @@ VALUES (
   1
 );
 
-INSERT INTO readings (photo, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
+INSERT INTO readings (photo, value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
   NULL,
   46.8,
