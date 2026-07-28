@@ -1,11 +1,9 @@
 -- Seed data for first-run UI demo.
 -- 3 demo readings with placeholder photos, GPS coordinates, and values.
 
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
+INSERT INTO readings (photo, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
   NULL,
-  34.0522,
-  -118.2437,
   48.5,
   '2026-03-14T10:00:00Z',
   '{"iv":"aGVsbG9fd29ybGRfdjEyMw==","data":"ZW5jcnlwdGVkX2Jsb2JfZGF0YQ=="}',
@@ -18,11 +16,9 @@ VALUES (
   1
 );
 
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
+INSERT INTO readings (photo, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
   NULL,
-  34.0589,
-  -118.2567,
   52.3,
   '2026-03-14T11:30:00Z',
   '{"iv":"c2Vjb25kX3BsYWNlaG9sZGVyX2l2","data":"c2Vjb25kX2VuY3J5cHRlZF9ibG9i"}',
@@ -35,11 +31,9 @@ VALUES (
   1
 );
 
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
+INSERT INTO readings (photo, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
   NULL,
-  34.0445,
-  -118.2398,
   46.8,
   '2026-03-14T14:15:00Z',
   '{"iv":"dGhpcmRfcGxhY2Vob2xkZXJfaXY","data":"dGhpcmRfZW5jcnlwdGVkX2Jsb2I"}',
