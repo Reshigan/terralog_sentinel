@@ -1,9 +1,8 @@
 -- Seed data for first-run UI demo.
 -- 3 demo readings with placeholder photos, GPS coordinates, and values.
 
-INSERT INTO readings (tenant, photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, created_at, row_version)
+INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
-  'default',
   NULL,
   34.0522,
   -118.2437,
@@ -16,14 +15,11 @@ VALUES (
   1,
   1,
   1,
-  NULL,
-  '2026-03-14T10:00:00Z',
   1
 );
 
-INSERT INTO readings (tenant, photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, created_at, row_version)
+INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
-  'default',
   NULL,
   34.0589,
   -118.2567,
@@ -36,14 +32,11 @@ VALUES (
   1,
   1,
   1,
-  NULL,
-  '2026-03-14T11:30:00Z',
   1
 );
 
-INSERT INTO readings (tenant, photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, created_at, row_version)
+INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id, row_version)
 VALUES (
-  'default',
   NULL,
   34.0445,
   -118.2398,
@@ -56,7 +49,5 @@ VALUES (
   1,
   1,
   1,
-  NULL,
-  '2026-03-14T14:15:00Z',
   1
 );
