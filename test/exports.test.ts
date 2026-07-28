@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, jest as vi } from "bun:test";
 import type { D1Database } from "@cloudflare/workers-types";
 
 // Type definitions for our test environment
