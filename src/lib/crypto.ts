@@ -168,11 +168,11 @@ function sha1sync(data: Uint8Array): Uint8Array {
   // Simple SHA-1 implementation for UUIDv5
   const ROTL = (n: number, s: number) => (n << s) | (n >>> (32 - s));
 
-  const h0 = 0x67452301;
-  const h1 = 0xefcdab89;
-  const h2 = 0x98badcfe;
-  const h3 = 0x10325476;
-  const h4 = 0xc3d2e1f0;
+  const H0 = 0x67452301;
+  const H1 = 0xefcdab89;
+  const H2 = 0x98badcfe;
+  const H3 = 0x10325476;
+  const H4 = 0xc3d2e1f0;
 
   // Pre-processing: padding
   const ml = data.length * 8;
@@ -185,7 +185,7 @@ function sha1sync(data: Uint8Array): Uint8Array {
     padded[padded.length - 8 + i] = (ml >>> (56 - i * 8)) & 0xff;
   }
 
-  let h = h0, hh1 = h1, h2 = h2, h3 = h3, hh4 = h4;
+  let h = H0, hh1 = H1, h2 = H2, h3 = H3, hh4 = H4;
 
   for (let chunk = 0; chunk < padded.length / 64; chunk++) {
     const w = new Uint32Array(80);

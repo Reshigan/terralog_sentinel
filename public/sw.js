@@ -17,18 +17,18 @@ const BASE_DELAY = 1000;
 const MAX_DELAY = 60000;
 const MAX_ATTEMPTS = 5;
 
-declare const self: ServiceWorkerGlobalScope;
+const self = globalThis;
 
-self.addEventListener('install', (event: ExtendableEvent) => {
+self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS);
     })
   );
-  (self as any).skipWaiting();
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', (event: ExtendableEvent) => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
@@ -38,10 +38,10 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
       );
     })
   );
-  (self as any).clients.claim();
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event: FetchEvent) => {
+self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
   if (url.pathname.startsWith('/api/sync') && event.request.method === 'POST') {
@@ -72,7 +72,7 @@ self.addEventListener('fetch', (event: FetchEvent) => {
   );
 });
 
-self.addEventListener('sync', (event: SyncEvent) => {
+self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-readings') {
     event.waitUntil(syncPendingReadings());
   }
@@ -88,7 +88,7 @@ self.addEventListener('visibilitychange', () => {
   }
 });
 
-async function handleSyncRequest(request: Request): Promise<Response> {
+async function handleSyncRequest(request) {
   try {
     const body = await request.json();
     const readingIds = body.reading_ids || [];
@@ -120,7 +120,7 @@ async function handleSyncRequest(request: Request): Promise<Response> {
   }
 }
 
-async function attemptSyncReading(readingId: string): Promise<boolean> {
+async function attemptSyncReading(readingId) {
   const db = await openDB();
   const tx = db.transaction('readings', 'readwrite');
   const store = tx.objectStore('readings');
@@ -170,14 +170,14 @@ async function attemptSyncReading(readingId: string): Promise<boolean> {
   });
 }
 
-function calculateBackoff(attempt: number): number {
+function calculateBackoff(attempt) {
   const delay = Math.min(BASE_DELAY * Math.pow(2, attempt - 1), MAX_DELAY);
   const jitter = (Math.random() - 0.5) * 2 * 0.5 * delay;
   return Math.max(500, delay + jitter);
 }
 
-async function syncPendingReadings(): Promise<void> {
-  if (!(navigator as any).onLine) {
+async function syncPendingReadings() {
+  if (!navigator.onLine) {
     return;
   }
   
@@ -213,7 +213,7 @@ async function syncPendingReadings(): Promise<void> {
   });
 }
 
-async function openDB(): Promise<IDBDatabase> {
+function openDB() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('terminus_readings', 1);
     
@@ -222,7 +222,7 @@ async function openDB(): Promise<IDBDatabase> {
     request.onsuccess = () => resolve(request.result);
     
     request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
+      const db = event.target.result;
       
       if (!db.objectStoreNames.contains('readings')) {
         const store = db.createObjectStore('readings', { keyPath: 'id' });
@@ -237,9 +237,9 @@ async function openDB(): Promise<IDBDatabase> {
   });
 }
 
-async function notifyClients(data: any): Promise<void> {
-  const clients = await (self as any).clients.matchAll();
-  clients.forEach((client: any) => {
+async function notifyClients(data) {
+  const clients = await self.clients.matchAll();
+  clients.forEach((client) => {
     client.postMessage({ type: 'sync-status', ...data });
   });
 }

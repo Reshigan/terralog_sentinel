@@ -72,7 +72,7 @@ describe("routes", () => {
       sync_status: "pending",
     });
 
-    const handler = routes["/api/readings"]?.POST;
+    const handler = routes["/api/readings/capture"]?.POST;
     expect(handler).toBeDefined();
     
     const response = await handler(req, env, {} as ExecutionContext);
@@ -81,11 +81,11 @@ describe("routes", () => {
   });
 
   it("maps GET /api/readings to list handler", async () => {
-    const req = makeRequest("/api/readings?sync_status=pending", "GET");
+    const req = makeRequest("/api/readings/list?sync_status=pending", "GET");
     const env = makeEnv();
     mockList.mockResolvedValue([]);
 
-    const handler = routes["/api/readings"]?.GET;
+    const handler = routes["/api/readings/list"]?.GET;
     expect(handler).toBeDefined();
     
     const response = await handler(req, env, {} as ExecutionContext);
@@ -94,11 +94,11 @@ describe("routes", () => {
   });
 
   it("maps POST /api/sync to trigger handler", async () => {
-    const req = makeRequest("/api/sync", "POST");
+    const req = makeRequest("/api/sync/trigger", "POST");
     const env = makeEnv();
     mockSyncTrigger.mockResolvedValue({ synced: 5, failed: 0 });
 
-    const handler = routes["/api/sync"]?.POST;
+    const handler = routes["/api/sync/trigger"]?.POST;
     expect(handler).toBeDefined();
     
     const response = await handler(req, env, {} as ExecutionContext);
@@ -120,13 +120,13 @@ describe("routes", () => {
   });
 
   it("maps POST /api/keys to derive handler", async () => {
-    const req = makeRequest("/api/keys", "POST", {
+    const req = makeRequest("/api/keys/derive", "POST", {
       passphrase: "test-passphrase",
     });
     const env = makeEnv();
     mockKeyDerive.mockResolvedValue({ success: true });
 
-    const handler = routes["/api/keys"]?.POST;
+    const handler = routes["/api/keys/derive"]?.POST;
     expect(handler).toBeDefined();
     
     const response = await handler(req, env, {} as ExecutionContext);
@@ -155,38 +155,38 @@ describe("routes", () => {
     expect(handler).toBeUndefined();
   });
 
-  it("returns 405 for wrong method on /api/readings", async () => {
-    const req = makeRequest("/api/readings", "PUT");
+  it("returns 405 for wrong method on /api/readings/capture", async () => {
+    const req = makeRequest("/api/readings/capture", "PUT");
     const env = makeEnv();
 
-    const handler = routes["/api/readings"]?.PUT;
+    const handler = routes["/api/readings/capture"]?.PUT;
     expect(handler).toBeUndefined();
   });
 
-  it("returns 405 for wrong method on /api/sync", async () => {
-    const req = makeRequest("/api/sync", "DELETE");
+  it("returns 405 for wrong method on /api/sync/trigger", async () => {
+    const req = makeRequest("/api/sync/trigger", "DELETE");
     const env = makeEnv();
 
-    const handler = routes["/api/sync"]?.DELETE;
+    const handler = routes["/api/sync/trigger"]?.DELETE;
     expect(handler).toBeUndefined();
   });
 
-  it("returns 405 for wrong method on /api/keys", async () => {
-    const req = makeRequest("/api/keys", "PATCH");
+  it("returns 405 for wrong method on /api/keys/derive", async () => {
+    const req = makeRequest("/api/keys/derive", "PATCH");
     const env = makeEnv();
 
-    const handler = routes["/api/keys"]?.PATCH;
+    const handler = routes["/api/keys/derive"]?.PATCH;
     expect(handler).toBeUndefined();
   });
 
   it("handles list with tenant filtering", async () => {
-    const req = makeRequest("/api/readings?tenant=custom", "GET");
+    const req = makeRequest("/api/readings/list?tenant=custom", "GET");
     const env = makeEnv();
     mockList.mockResolvedValue([
       { id: 1, tenant: "custom", numeric_value: 10 },
     ]);
 
-    const handler = routes["/api/readings"]?.GET;
+    const handler = routes["/api/readings/list"]?.GET;
     const response = await handler(req, env, {} as ExecutionContext);
     const data = await response.json();
     
@@ -209,7 +209,7 @@ describe("routes", () => {
   });
 
   it("validates required fields on capture", async () => {
-    const req = makeRequest("/api/readings", "POST", {
+    const req = makeRequest("/api/readings/capture", "POST", {
       photo: "base64data",
       // missing latitude, longitude, numeric_value
     });
@@ -218,14 +218,14 @@ describe("routes", () => {
       error: "Missing required fields",
     });
 
-    const handler = routes["/api/readings"]?.POST;
+    const handler = routes["/api/readings/capture"]?.POST;
     const response = await handler(req, env, {} as ExecutionContext);
     
     expect(mockCapture).toHaveBeenCalled();
   });
 
   it("validates passphrase on key derivation", async () => {
-    const req = makeRequest("/api/keys", "POST", {
+    const req = makeRequest("/api/keys/derive", "POST", {
       // missing passphrase
     });
     const env = makeEnv();
@@ -233,18 +233,18 @@ describe("routes", () => {
       error: "Passphrase required",
     });
 
-    const handler = routes["/api/keys"]?.POST;
+    const handler = routes["/api/keys/derive"]?.POST;
     const response = await handler(req, env, {} as ExecutionContext);
     
     expect(mockKeyDerive).toHaveBeenCalled();
   });
 
   it("sync handler returns sync counts", async () => {
-    const req = makeRequest("/api/sync", "POST");
+    const req = makeRequest("/api/sync/trigger", "POST");
     const env = makeEnv();
     mockSyncTrigger.mockResolvedValue({ synced: 10, failed: 2 });
 
-    const handler = routes["/api/sync"]?.POST;
+    const handler = routes["/api/sync/trigger"]?.POST;
     const response = await handler(req, env, {} as ExecutionContext);
     const data = await response.json() as Record<string, number>;
     
@@ -265,19 +265,20 @@ describe("routes", () => {
   });
 
   it("routes object has all expected endpoints", () => {
-    expect(routes["/api/readings"]).toBeDefined();
-    expect(routes["/api/sync"]).toBeDefined();
+    expect(routes["/api/readings/capture"]).toBeDefined();
+    expect(routes["/api/readings/list"]).toBeDefined();
+    expect(routes["/api/sync/trigger"]).toBeDefined();
     expect(routes["/api/sync/status"]).toBeDefined();
-    expect(routes["/api/keys"]).toBeDefined();
+    expect(routes["/api/keys/derive"]).toBeDefined();
     expect(routes["/api/keys/status"]).toBeDefined();
   });
 
   it("each route has GET and POST handlers where applicable", () => {
-    expect(routes["/api/readings"]?.GET).toBeDefined();
-    expect(routes["/api/readings"]?.POST).toBeDefined();
-    expect(routes["/api/sync"]?.POST).toBeDefined();
+    expect(routes["/api/readings/list"]?.GET).toBeDefined();
+    expect(routes["/api/readings/capture"]?.POST).toBeDefined();
+    expect(routes["/api/sync/trigger"]?.POST).toBeDefined();
     expect(routes["/api/sync/status"]?.GET).toBeDefined();
-    expect(routes["/api/keys"]?.POST).toBeDefined();
+    expect(routes["/api/keys/derive"]?.POST).toBeDefined();
     expect(routes["/api/keys/status"]?.GET).toBeDefined();
   });
-}
+});
