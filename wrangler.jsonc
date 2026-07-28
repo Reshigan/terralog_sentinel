@@ -1,0 +1,33 @@
+{
+  "name": "terminus-ui-offline-first-pwa-for-resh-c",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "terminus-ui-offline-first-pwa-for-resh-c-db",
+      "database_id": "PLACEHOLDER_DB_ID"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "terminus-ui-offline-first-pwa-for-resh-c-uploads"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  }
+}
