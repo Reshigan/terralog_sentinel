@@ -23,6 +23,9 @@ import { listReading_historys, listReading_historysStats, getReading_history, cr
 import { listNotifications, listNotificationsStats, getNotification, createNotification, createNotificationBulk, updateNotification, deleteNotification, deleteNotificationRestore } from "./handlers/notification";
 import { listSync_policys, listSync_policysStats, getSync_policy, createSync_policy, createSync_policyBulk, updateSync_policy, deleteSync_policy, deleteSync_policyRestore } from "./handlers/sync_policy";
 import { listAudit_trails, listAudit_trailsStats, getAudit_trail, createAudit_trail, createAudit_trailBulk, updateAudit_trail } from "./handlers/audit_trail";
+import { captureReading, listReadings as listReadingsApi, triggerSync, getSyncStatus, deriveKey, getKeyStatus } from "./handlers/readings";
+import { syncTrigger, syncStatus } from "./handlers/sync";
+import { keyDerive, keyStatus } from "./handlers/keys";
 
 export const routes: Route[] = [
   { method: "POST", path: "/api/auth/signup", handler: limited(signup, "auth") },
@@ -195,4 +198,10 @@ export const routes: Route[] = [
   { method: "PATCH", path: "/api/maintenance_schedules/:id", handler: limited(updateMaintenance_schedule, "write") },
   { method: "DELETE", path: "/api/maintenance_schedules/:id", handler: limited(deleteMaintenance_schedule, "write") },
   { method: "POST", path: "/api/maintenance_schedules/:id/restore", handler: limited(deleteMaintenance_scheduleRestore, "write") },
+  { method: "POST", path: "/api/readings/capture", handler: limited(captureReading, "write") },
+  { method: "GET", path: "/api/readings/list", handler: limited(listReadingsApi, "read") },
+  { method: "POST", path: "/api/sync/trigger", handler: limited(syncTrigger, "write") },
+  { method: "GET", path: "/api/sync/status", handler: limited(syncStatus, "read") },
+  { method: "POST", path: "/api/keys/derive", handler: limited(keyDerive, "auth") },
+  { method: "GET", path: "/api/keys/status", handler: limited(keyStatus, "read") },
 ];
