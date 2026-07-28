@@ -1,0 +1,26 @@
+name = "terminus-ui-offline-first-pwa-for-resh-c"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[env.production]
+d1_bindings = { DB = "terminus-production" }
+
+[env.production.vars]
+ENVIRONMENT = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "terminus-field-data"
+database_id = "REPLACE_ME_D1_DATABASE_ID"
+
+[[migrations]]
+tag = "v0001_init"
+dir = "migrations"
+
+[[migrations]]
+tag = "v0002_seed"
+dir = "migrations"
+
+[assets]
+binding = "ASSETS"
+directory = "public"
