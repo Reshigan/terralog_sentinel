@@ -523,3 +523,5 @@ export async function getEntry(
     signature_id: row.signature_id,
   };
 }
+
+export type { LedgerEntryType } from "./schema.ts";

@@ -984,3 +984,8 @@ export const consumeMagicLink: Handler<MagicLinkConsumeResponse | { error: strin
     consumed_at: now,
   });
 };
+
+export { json } from "../lib/http.ts";
+export { readJson } from "../lib/http.ts";
+export type { Handler } from "../lib/http.ts";
+export type { Env } from "../lib/http.ts";

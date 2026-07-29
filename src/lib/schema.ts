@@ -583,3 +583,5 @@ export type AnomalyFlagResponse = z.infer<typeof AnomalyFlagResponse>;
 export type DateQuery = z.infer<typeof DateQuery>;
 export type ListVisitsQuery = z.infer<typeof ListVisitsQuery>;
 export type ListScoresQuery = z.infer<typeof ListScoresQuery>;
+
+export type { LedgerEntry } from "./ledger.ts";

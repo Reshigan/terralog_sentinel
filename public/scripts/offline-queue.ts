@@ -307,3 +307,5 @@ export async function clearCompleted(): Promise<void> {
     }
   }
 }
+
+export { OfflineQueue } from "./app.ts";
