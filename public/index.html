@@ -5,277 +5,345 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0d0f11" />
 <meta name="color-scheme" content="dark light" />
-<title>Terminus — offline field capture</title>
+<meta name="description" content="Desklog — calendar-anchored service visit ledger. Confirm vendors showed, with dual-signed proof, in one tap." />
+<title>Desklog — now board</title>
 <link rel="manifest" href="./manifest.json" />
 <link rel="icon" href="./icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="./icon.svg" />
 <style>
-  /* One source of truth: every token used in the UI is here. No hard-coded
-     accent colours anywhere else in the file — that's the audit's first check. */
   :root {
     color-scheme: dark;
     --bg: #0d0f11;
     --surface: #16191d;
-    --surface-soft: color-mix(in srgb, var(--accent) 8%, var(--surface) 92%);
+    --surface-soft: #1c1f24;
     --ink: #e8eaed;
-    --ink-soft: #aab0b8;
-    --line: #232830;
-    --accent: #7fb869;          /* field-instrument green: legible at AAA on --bg */
+    --ink-soft: #9ca3ab;
+    --line: #2a2e35;
+    --accent: #7fb869;
     --accent-ink: #08110a;
-    --warn: #d97757;
-    --ok: #7fb869;
+    --warn: #d9a247;
     --bad: #c0524f;
-    --radius: 14px;
-    --tap: 48px;                /* WCAG 2.5.5 target size */
+    --ok: #7fb869;
+    --radius: 12px;
+    --tap: 48px;
     --pad: 16px;
-    --max: 720px;
+    --max: 540px;
+    --font-mono: ui-monospace, "Cascadia Code", "Fira Mono", Menlo, monospace;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
-
   @media (prefers-color-scheme: light) {
     :root {
       --bg: #f5f6f4;
       --surface: #ffffff;
-      --surface-soft: color-mix(in srgb, var(--accent) 6%, var(--surface) 94%);
+      --surface-soft: #f0f1ee;
       --ink: #14181c;
-      --ink-soft: #525a64;
-      --line: #dfe2e6;
+      --ink-soft: #5c6370;
+      --line: #d8dbe0;
     }
   }
-
-  /* System font stack — ships with the OS, no network round-trip before first
-     paint, which is what an off-grid first-load demands. */
-  html, body, input, textarea, button, select {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 1.45;
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
   }
-
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
-  body { min-height: 100dvh; -webkit-text-size-adjust: 100%; }
-
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--bg);
+    min-height: 100dvh;
+  }
   main {
     max-width: var(--max);
     margin: 0 auto;
-    padding: calc(env(safe-area-inset-top) + 16px) var(--pad) calc(env(safe-area-inset-bottom) + 96px);
-    display: grid;
-    gap: 16px;
+    padding: calc(env(safe-area-inset-top) + 8px) var(--pad) calc(env(safe-area-inset-bottom) + 80px);
   }
-
-  header.app {
+  .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    padding: 8px 0 12px;
   }
-  header.app h1 {
-    font-size: 1.125rem;
+  .header h1 {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
     margin: 0;
-    letter-spacing: 0.01em;
-    font-weight: 600;
   }
-  .status {
+  .net-pill {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: var(--surface);
-    border: 1px solid var(--line);
+    gap: 6px;
+    font-size: 0.75rem;
     color: var(--ink-soft);
-    font-size: 0.8125rem;
   }
-  .status .dot {
-    width: 8px; height: 8px; border-radius: 50%;
+  .net-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
     background: var(--ink-soft);
   }
-  .status[data-state="online"]   .dot { background: var(--ok); }
-  .status[data-state="syncing"]  .dot { background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
-  .status[data-state="offline"]  .dot { background: var(--warn); }
-  .status[data-state="locked"]   .dot { background: var(--bad); }
-  @keyframes pulse { 50% { opacity: 0.35; } }
-
-  /* Dashboard grid: vertical card stack. The verifier rejects symmetric 3-up
-     feature rows; the same vertical stack used here is what landing.html must
-     match. */
-  .grid { display: grid; gap: 12px; }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 16px;
-    display: grid;
-    gap: 12px;
+  .net-pill[data-net="online"] .net-dot { background: var(--ok); }
+  .net-pill[data-net="offline"] .net-dot { background: var(--warn); }
+  .net-pill[data-net="syncing"] .net-dot { background: var(--accent); animation: pulse-dot 1.4s ease-in-out infinite; }
+  @keyframes pulse-dot { 50% { opacity: 0.3; } }
+  .date-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px;
   }
-  .card h2 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--ink);
+  .date-label {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
   }
-  .card p { margin: 0; color: var(--ink-soft); font-size: 0.9375rem; }
-
-  /* Stepped form. Only ONE section is ever visible: the active one. Hidden
-     siblings are removed from the a11y tree (aria-hidden=true) AND from the
-     tab order (inert), so a screen reader never reads ahead and Tab can never
-     land on a field the user can't see. */
-  fieldset.step {
-    border: 0;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 12px;
-  }
-  fieldset.step[hidden],
-  fieldset.step {
-    /* `hidden` attribute already removes from layout; the aria-hidden below
-       is the source of truth for AT, since `hidden` alone isn't always
-       announced as 'collapsed' consistently. */
-  }
-
-  label.field {
-    display: grid;
-    gap: 6px;
-    font-size: 0.875rem;
+  .date-weekday {
+    font-size: 0.8125rem;
     color: var(--ink-soft);
   }
-  label.field > span { font-weight: 500; color: var(--ink); }
-  input[type="text"],
-  input[type="number"],
-  input[type="search"],
-  textarea,
-  select {
-    width: 100%;
-    min-height: var(--tap);
-    padding: 12px 14px;
-    background: var(--bg);
-    color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    outline-offset: 2px;
+  .now-line {
+    height: 2px;
+    background: var(--accent);
+    margin: 0 0 0;
+    border-radius: 1px;
+    position: relative;
   }
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible,
-  button:focus-visible,
-  [tabindex]:focus-visible {
+  .now-line-time {
+    position: absolute;
+    right: 0;
+    top: -18px;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  #now-board {
+    display: grid;
+    gap: 0;
+    padding-top: 12px;
+  }
+  .slot {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    grid-template-rows: auto auto;
+    gap: 0 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    min-height: var(--tap);
+    outline: none;
+  }
+  .slot:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  .slot:hover {
+    background: var(--surface-soft);
+  }
+  .slot-time {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    line-height: 1.3;
+    padding-top: 2px;
+  }
+  .slot-body {
+    display: grid;
+    gap: 2px;
+  }
+  .slot-vendor {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .slot-service {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+  }
+  .slot-drift {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    color: var(--ink-soft);
+  }
+  .slot-receipt {
+    font-size: 0.6875rem;
+    color: var(--ink-soft);
+  }
+  /* Drift states: border-left style is the primary visual signal. Color is supplemental, never the only signal. */
+  .slot[data-drift="on_time"]          { border-left: 3px solid var(--ok); padding-left: 9px; }
+  .slot[data-drift="early_start"]       { border-left: 3px solid var(--ink-soft); padding-left: 9px; }
+  .slot[data-drift="late_start"]        { border-left: 3px dashed var(--warn); padding-left: 9px; }
+  .slot[data-drift="late_start_on_time_end"] { border-left: 3px dashed var(--warn); padding-left: 9px; }
+  .slot[data-drift="missed"]            { border-left: 3px dotted var(--bad); padding-left: 9px; }
+  .slot[data-drift="completed"]          { border-left: 3px solid var(--ok); padding-left: 9px; }
+  /* Status icon via SVG inline */
+  .slot-icon {
+    width: 18px; height: 18px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  .slot[data-status="completed"] .slot-vendor::after {
+    content: " ✓";
+    color: var(--ok);
+    font-weight: 700;
+  }
+  .slot[data-status="missed"] .slot-vendor::after {
+    content: " ✗";
+    color: var(--bad);
+    font-weight: 700;
+  }
+  /* Empty / loading / error states */
+  .board-empty {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--ink-soft);
+  }
+  .board-empty p { margin: 8px 0; font-size: 0.875rem; }
+  .board-error {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--bad);
+  }
+  .board-error p { margin: 8px 0; font-size: 0.875rem; }
+  .board-loading {
+    display: grid;
+    gap: 0;
+  }
+  .skeleton {
+    background: var(--line);
+    border-radius: 4px;
+    animation: shimmer 1.6s ease-in-out infinite alternate;
+  }
+  @keyframes shimmer { from { opacity: 0.3; } to { opacity: 0.6; } }
+  .skeleton-slot {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0 10px;
+    padding: 10px 0;
+  }
+  .skeleton-bar {
+    height: 14px;
+    border-radius: 4px;
+    background: var(--line);
+  }
+  /* Action button for starting a visit */
+  .slot-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    min-width: 36px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .slot-action:focus-visible {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
   }
-  textarea { min-height: calc(var(--tap) * 2); resize: vertical; }
-
-  button {
-    min-height: var(--tap);
-    min-width: var(--tap);
-    padding: 0 18px;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--ink);
-    font-weight: 600;
-    cursor: pointer;
-  }
-  button.primary {
+  .slot-action.primary {
     background: var(--accent);
     color: var(--accent-ink);
     border-color: transparent;
   }
-  button[disabled] { opacity: 0.55; cursor: not-allowed; }
-
-  .row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .row > * { flex: 1 1 auto; }
-  .row > .grow { flex: 1 1 100%; }
-
-  /* Photo preview: fixed square, preserves aspect, never spills the card. */
-  .photo {
-    aspect-ratio: 1 / 1;
-    width: 100%;
-    max-width: 280px;
-    background: var(--surface-soft);
-    border: 1px dashed var(--line);
-    border-radius: var(--radius);
+  /* Late-reason overlay */
+  .late-reason-overlay {
+    position: fixed;
+    inset: 0;
+    background: color-mix(in srgb, #000 50%, transparent);
     display: grid;
     place-items: center;
-    color: var(--ink-soft);
-    overflow: hidden;
+    z-index: 10;
   }
-  .photo img, .photo video { width: 100%; height: 100%; object-fit: cover; }
-
-  /* Stepper progress: 1..N dots, current = accent. */
-  ol.steps {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .late-reason-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    max-width: 360px;
+    width: 90%;
+  }
+  .late-reason-card h2 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  .late-reason-card label {
+    display: grid;
+    gap: 4px;
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+  }
+  .late-reason-card textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--ink);
+    resize: vertical;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+  }
+  .late-reason-card textarea:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .late-reason-actions {
     display: flex;
     gap: 8px;
+    margin-top: 12px;
+    justify-content: flex-end;
   }
-  ol.steps li {
-    flex: 1;
-    height: 4px;
-    border-radius: 999px;
-    background: var(--line);
-  }
-  ol.steps li[aria-current="step"] { background: var(--accent); }
-
-  /* Floating action: always reachable with one thumb, never behind the OS bar. */
-  .dock {
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    padding: 12px var(--pad) calc(env(safe-area-inset-bottom) + 12px);
-    background: linear-gradient(to top, var(--bg) 70%, transparent);
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-  }
-  .dock > button { pointer-events: auto; min-width: 160px; }
-
-  /* Modal drawer: native <dialog> with focus trap, ESC-to-close, click-out to
-     dismiss, and focus restoration. The browser owns the focus trap as long as
-     we use inert-correct markup; we still belt-and-brace the focus order below. */
-  dialog.drawer {
-    margin: 0;
-    padding: 0;
-    width: min(100%, 420px);
-    max-height: 100dvh;
-    height: 100dvh;
+  .late-reason-actions button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 18px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
     background: var(--surface);
     color: var(--ink);
-    border: 0;
-    border-left: 1px solid var(--line);
-    border-radius: 0;
-    position: fixed;
-    inset: 0 0 0 auto;
-    overflow: auto;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
   }
-  dialog.drawer::backdrop {
-    background: color-mix(in srgb, #000 60%, transparent);
+  .late-reason-actions button:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
   }
-  dialog.drawer[open] { animation: slide-in 220ms ease-out; }
-  @keyframes slide-in { from { transform: translateX(100%); } }
-
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .late-reason-actions button.primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: transparent;
   }
-
-  .drawer-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--line);
+  .late-reason-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
-  .drawer-head h2 { margin: 0; font-size: 1rem; }
-  .drawer-body { padding: 16px; display: grid; gap: 16px; }
-  .visually-hidden {
-    position: absolute !important;
-    width: 1px; height: 1px;
-    padding: 0; margin: -1px;
-    overflow: hidden;
-    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-  }
-
-  /* Toast region for sync status. */
+  /* Toast */
   #toasts {
     position: fixed;
     left: 50%;
@@ -283,7 +351,7 @@
     transform: translateX(-50%);
     display: grid;
     gap: 8px;
-    z-index: 2;
+    z-index: 20;
     pointer-events: none;
   }
   .toast {
@@ -292,314 +360,773 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     padding: 10px 14px;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     pointer-events: auto;
+  }
+  /* Reduced motion: kill all animation */
+  @media (prefers-reduced-motion: reduce) {
+    .net-pill[data-net="syncing"] .net-dot { animation: none; }
+    .skeleton { animation: none; opacity: 0.4; }
   }
 </style>
 </head>
 <body>
 <main>
-  <header class="app" aria-label="App header">
-    <h1>Terminus</h1>
-    <span id="net" class="status" data-state="offline" role="status" aria-live="polite" aria-atomic="true">
-      <span class="dot" aria-hidden="true"></span>
-      <span class="label">Offline</span>
+  <header class="header" aria-label="App header">
+    <h1>Desklog</h1>
+    <span id="net-pill" class="net-pill" data-net="offline" role="status" aria-live="polite" aria-atomic="true">
+      <span class="net-dot" aria-hidden="true"></span>
+      <span class="net-label">Offline</span>
     </span>
   </header>
 
-  <!-- Step indicator: purely visual; aria-current on the dot list item
-       matches the active fieldset for AT. -->
-  <ol class="steps" aria-label="Capture progress">
-    <li aria-current="step" id="dot-1"></li>
-    <li id="dot-2"></li>
-    <li id="dot-3"></li>
-    <li id="dot-4"></li>
-  </ol>
+  <div class="date-row">
+    <span class="date-label" id="date-label"></span>
+    <span class="date-weekday" id="date-weekday"></span>
+  </div>
 
-  <form id="capture" novalidate aria-label="New reading">
-    <!-- Step 1: site selection. Hidden siblings are aria-hidden=true AND inert,
-         which removes them from BOTH the a11y tree and the focus order. The
-         `hidden` HTML attribute keeps them out of layout. All three together is
-         what the WCAG 2.1 modal/stepped-form audit actually checks for. -->
-    <fieldset class="step" id="step-1" aria-labelledby="step-1-title">
-      <legend id="step-1-title" class="visually-hidden">Step 1 of 4: site</legend>
-      <div class="card">
-        <h2>Site</h2>
-        <p>Pick the site you're at. The site name rides with the reading so a supervisor can group the data later.</p>
-        <label class="field">
-          <span for="site">Site name</span>
-          <select id="site" name="site" required autocomplete="off">
-            <option value="">Select a site…</option>
-          </select>
-        </label>
-      </div>
-      <div class="row">
-        <button type="button" class="primary" data-next>Continue</button>
-      </div>
-    </fieldset>
+  <div id="now-board" role="feed" aria-label="Today's service visits">
+    <!-- Slots rendered by JS -->
+  </div>
 
-    <fieldset class="step" id="step-2" aria-labelledby="step-2-title" hidden aria-hidden="true" inert tabindex="-1">
-      <legend id="step-2-title" class="visually-hidden">Step 2 of 4: photo</legend>
-      <div class="card">
-        <h2>Photo</h2>
-        <p>One frame is enough. The photo is encrypted on-device before it ever leaves your phone.</p>
-        <div class="photo" id="photo-frame">
-          <span id="photo-hint">No photo yet</span>
-        </div>
-        <div class="row">
-          <button type="button" id="capture-btn">Capture</button>
-          <button type="button" id="retake-btn" hidden>Retake</button>
-        </div>
+  <div id="late-reason-overlay" class="late-reason-overlay" hidden aria-hidden="true">
+    <div class="late-reason-card">
+      <h2>Late start reason</h2>
+      <label>
+        <span>Why was this visit started late? (min 10 characters)</span>
+        <textarea id="late-reason-input" minlength="10" aria-describedby="late-reason-hint"></textarea>
+      </label>
+      <span id="late-reason-hint" style="font-size:0.6875rem;color:var(--ink-soft);">10 characters minimum</span>
+      <div class="late-reason-actions">
+        <button type="button" id="late-reason-cancel">Cancel</button>
+        <button type="button" id="late-reason-submit" class="primary" disabled>Start visit</button>
       </div>
-      <div class="row">
-        <button type="button" data-prev>Back</button>
-        <button type="button" class="primary" data-next>Continue</button>
-      </div>
-    </fieldset>
-
-    <fieldset class="step" id="step-3" aria-labelledby="step-3-title" hidden aria-hidden="true" inert tabindex="-1">
-      <legend id="step-3-title" class="visually-hidden">Step 3 of 4: location</legend>
-      <div class="card">
-        <h2>Location</h2>
-        <p>GPS reads once. Re-tap if you're indoors and the first fix was poor.</p>
-        <div class="row" role="group" aria-label="Coordinates">
-          <label class="field grow">
-            <span for="lat">Latitude</span>
-            <input id="lat" name="lat" type="text" inputmode="decimal" readonly aria-readonly="true" />
-          </label>
-          <label class="field grow">
-            <span for="lon">Longitude</span>
-            <input id="lon" name="lon" type="text" inputmode="decimal" readonly aria-readonly="true" />
-          </label>
-        </div>
-        <div class="row">
-          <button type="button" id="gps-btn">Get fix</button>
-          <button type="button" id="gps-skip">Skip (manual)</button>
-        </div>
-      </div>
-      <div class="row">
-        <button type="button" data-prev>Back</button>
-        <button type="button" class="primary" data-next>Continue</button>
-      </div>
-    </fieldset>
-
-    <fieldset class="step" id="step-4" aria-labelledby="step-4-title" hidden aria-hidden="true" inert tabindex="-1">
-      <legend id="step-4-title" class="visually-hidden">Step 4 of 4: value and submit</legend>
-      <div class="card">
-        <h2>Reading</h2>
-        <p>Enter the meter or gauge value. Units are set by your site profile.</p>
-        <label class="field">
-          <span for="value">Numeric value</span>
-          <input id="value" name="value" type="number" inputmode="decimal" step="any" required />
-        </label>
-        <label class="field">
-          <span for="notes">Notes (optional)</span>
-          <textarea id="notes" name="notes" rows="3" maxlength="280"></textarea>
-        </label>
-      </div>
-      <div class="row">
-        <button type="button" data-prev>Back</button>
-        <button type="submit" class="primary" id="submit-btn">Save offline</button>
-      </div>
-    </fieldset>
-  </form>
-
-  <!-- Drawer: settings, pending queue, sync log. role=dialog + aria-modal=true
-       on the <dialog> element tells AT this is modal. focusTrap() below
-       additionally enforces Tab cycle inside, since not every engine honours
-       the dialog focus invariants on Safari iOS 12. -->
-  <dialog id="drawer" class="drawer" aria-labelledby="drawer-title" aria-modal="true">
-    <div class="drawer-head">
-      <h2 id="drawer-title">Menu</h2>
-      <button type="button" id="drawer-close" aria-label="Close menu">×</button>
     </div>
-    <div class="drawer-body" id="drawer-body" tabindex="-1">
-      <section aria-labelledby="sec-queue">
-        <h3 id="sec-queue" style="margin:0;font-size:0.9375rem;">Pending queue</h3>
-        <p id="queue-count" style="margin:0;color:var(--ink-soft);">0 readings waiting</p>
-      </section>
-      <section aria-labelledby="sec-sync">
-        <h3 id="sec-sync" style="margin:0;font-size:0.9375rem;">Sync</h3>
-        <p id="sync-info" style="margin:0;color:var(--ink-soft);">Idle</p>
-        <button type="button" id="sync-now">Sync now</button>
-      </section>
-      <section aria-labelledby="sec-key">
-        <h3 id="sec-key" style="margin:0;font-size:0.9375rem;">Encryption</h3>
-        <p id="key-info" style="margin:0;color:var(--ink-soft);">Device key active</p>
-        <button type="button" id="reset-key">Reset key</button>
-      </section>
-    </div>
-  </dialog>
+  </div>
 </main>
-
-<div class="dock">
-  <button type="button" class="primary" id="open-drawer" aria-haspopup="dialog" aria-controls="drawer">Menu</button>
-</div>
 
 <div id="toasts" role="region" aria-label="Notifications" aria-live="polite" aria-relevant="additions"></div>
 
-<script>
+<script type="module">
 (() => {
   "use strict";
 
-  // ---------- stepped form: focus + a11y + visible state ---------------
-  // One source of truth for what step is active. EVERYTHING that depends on
-  // "which step" — visibility, aria-hidden, aria-current, focus, the focus
-  // trap's allow-list — reads from here. That is why the verifier complaint
-  // ("focus escapes hidden sections") cannot recur: there is no code path
-  // that toggles visibility without also flipping aria-hidden + inert here.
-  const steps = Array.from(document.querySelectorAll("fieldset.step"));
-  const dots  = Array.from(document.querySelectorAll("ol.steps li"));
-  let active = 0;
+  // ---------- Types (mirrors src/types.ts for the client) ----------
+  /**
+   * @typedef {"scheduled"|"due"|"in_progress"|"completed"|"missed"|"disputed"|"archived"} VisitInstanceStatus
+   * @typedef {"on_time"|"early_start"|"late_start"|"late_start_on_time_end"|"missed"|"completed"} DriftState
+   * @typedef {"drafted"|"awaiting_office"|"awaiting_counterparty"|"sealed"|"expired"|"revoked"} ReceiptStatus
+   * @typedef {"start_visit"|"confirm_end"|"sign_receipt"|"file_override"|"update_note"} ActionType
+   *
+   * @typedef {object} NowBoardSlot
+   * @property {string} instance_id
+   * @property {string} template_id
+   * @property {string} vendor_id
+   * @property {string} vendor_name
+   * @property {string} service_type
+   * @property {string} scheduled_start_at
+   * @property {string} scheduled_end_at
+   * @property {VisitInstanceStatus} status
+   * @property {string|null} actual_start_at
+   * @property {string|null} actual_end_at
+   * @property {number} drift_seconds
+   * @property {DriftState} drift_state
+   * @property {ReceiptStatus|null} receipt_status
+   * @property {boolean} requires_counterparty_signature
+   *
+   * @typedef {object} NowBoardResponse
+   * @property {string} date
+   * @property {string} timezone
+   * @property {string} current_time
+   * @property {NowBoardSlot[]} slots
+   * @property {{last_sync_at: string, status: string}} sync_status
+   *
+   * @typedef {object} QueuedAction
+   * @property {string} id
+   * @property {ActionType} type
+   * @property {string} instance_id
+   * @property {object} payload
+   * @property {string} original_timestamp
+   * @property {number} queued_at
+   * @property {number} retry_count
+   * @property {string} status
+   */
 
-  function setStep(next) {
-    next = Math.max(0, Math.min(steps.length - 1, next));
-    steps.forEach((fs, i) => {
-      const isActive = i === next;
-      // visible
-      fs.hidden = !isActive;
-      // a11y tree
-      fs.setAttribute("aria-hidden", isActive ? "false" : "true");
-      // focus order: inert removes the whole subtree from tab order, so Tab
-      // physically cannot land on a field the user can't see.
-      if (isActive) fs.removeAttribute("inert");
-      else fs.setAttribute("inert", "");
-      // step indicator
-      if (dots[i]) dots[i].setAttribute("aria-current", isActive ? "step" : "false");
-    });
-    active = next;
-    // Move focus into the newly revealed section so screen reader users hear
-    // it announced, and keyboard users land on the first field, not the
-    // document body. We focus the first focusable inside the active step,
-    // falling back to the fieldset itself (which has tabindex=-1) so the
-    // section is at least in the AT focus ring.
-    const fs = steps[next];
-    const first = fs.querySelector(
-      "input:not([type=hidden]):not([readonly]), select, textarea, button, [tabindex]:not([tabindex='-1'])"
-    );
-    (first || fs).focus({ preventScroll: false });
+  // ---------- DOM refs ----------
+  const board = document.getElementById("now-board");
+  const dateLabel = document.getElementById("date-label");
+  const dateWeekday = document.getElementById("date-weekday");
+  const netPill = document.getElementById("net-pill");
+  const netLabel = netPill.querySelector(".net-label");
+  const lateOverlay = document.getElementById("late-reason-overlay");
+  const lateInput = document.getElementById("late-reason-input");
+  const lateSubmit = document.getElementById("late-reason-submit");
+  const lateCancel = document.getElementById("late-reason-cancel");
+  const toastRegion = document.getElementById("toasts");
+
+  // ---------- State ----------
+  let currentFocusIndex = -1;
+  /** @type {Array<{instance_id: string, element: HTMLElement, data: NowBoardSlot}>} */
+  let slots = [];
+  let lateReasonInstanceId = null;
+  let boardData = null;
+
+  // ---------- Utility ----------
+  function tenantSlug() {
+    const path = window.location.pathname;
+    const match = path.match(/^\/t\/([a-z0-9-]+)/i);
+    return match ? match[1] : null;
   }
 
-  document.getElementById("capture").addEventListener("click", (e) => {
-    const t = e.target;
-    if (!(t instanceof HTMLElement)) return;
-    if (t.matches("[data-next]")) setStep(active + 1);
-    else if (t.matches("[data-prev]")) setStep(active - 1);
-  });
-
-  // ---------- dialog / drawer: focus trap ------------------------------
-  // <dialog> already gives us the inert backdrop, but the WCAG audit also
-  // checks: (a) Tab cycles within, (b) Shift+Tab cycles back, (c) focus
-  // returns to the opener on close, (d) the trap survives a no-focusable
-  // edge case. focusTrap() handles all four.
-  const dlg = document.getElementById("drawer");
-  const opener = document.getElementById("open-drawer");
-  let lastFocus = null;
-
-  function focusables(root) {
-    const sel = [
-      "a[href]",
-      "area[href]",
-      "button:not([disabled])",
-      "input:not([disabled]):not([type=hidden])",
-      "select:not([disabled])",
-      "textarea:not([disabled])",
-      "[tabindex]:not([tabindex='-1'])",
-    ].join(",");
-    return Array.from(root.querySelectorAll(sel)).filter((el) => {
-      // Skip elements inside an inert subtree (defence in depth — the dialog
-      // itself is non-inert, but a future injected section might be).
-      return !el.closest("[inert]");
-    });
+  function apiBase() {
+    const slug = tenantSlug();
+    return slug ? `/t/${slug}/api/v1` : "/api/v1";
   }
 
-  function trap(e) {
-    if (!dlg.open) return;
-    const f = focusables(dlg);
-    if (f.length === 0) {
-      // Nowhere to go — keep focus on the dialog body so Tab can't escape.
-      e.preventDefault();
-      document.getElementById("drawer-body").focus();
-      return;
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+
+  function formatWeekday(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { weekday: "long" });
+  }
+
+  function formatTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  }
+
+  function formatDrift(seconds) {
+    if (seconds === 0) return "On time";
+    const abs = Math.abs(seconds);
+    const m = Math.floor(abs / 60);
+    const s = abs % 60;
+    const sign = seconds > 0 ? "+" : "−";
+    if (m === 0) return `${sign}${s}s`;
+    if (s === 0) return `${sign}${m}m`;
+    return `${sign}${m}m ${s}s`;
+  }
+
+  function driftLabel(state, seconds) {
+    const labels = {
+      on_time: "On time",
+      early_start: "Early",
+      late_start: "Late start",
+      late_start_on_time_end: "Late start, on-time end",
+      missed: "Missed",
+      completed: "Completed"
+    };
+    const label = labels[state] || state;
+    if (seconds !== 0 && state !== "on_time" && state !== "completed") {
+      return `${label} (${formatDrift(seconds)})`;
     }
-    const first = f[0];
-    const last = f[f.length - 1];
-    const cur = document.activeElement;
-    if (e.shiftKey && cur === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && cur === last) {
-      e.preventDefault();
-      first.focus();
-    }
+    return label;
   }
 
-  function openDrawer() {
-    lastFocus = document.activeElement;
-    dlg.showModal();
-    // Land focus on the first focusable inside (or the body as a fallback).
-    const f = focusables(dlg);
-    (f[0] || document.getElementById("drawer-body")).focus();
-    dlg.addEventListener("keydown", trap);
-  }
-  function closeDrawer() {
-    dlg.removeEventListener("keydown", trap);
-    dlg.close();
-    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+  function toast(msg) {
+    const el = document.createElement("div");
+    el.className = "toast";
+    el.textContent = msg;
+    toastRegion.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
   }
 
-  opener.addEventListener("click", openDrawer);
-  document.getElementById("drawer-close").addEventListener("click", closeDrawer);
-  // Click on the backdrop (the dialog element itself, when the click target
-  // IS the dialog, not its children) closes the drawer — native <dialog>
-  // backdrop clicks land here.
-  dlg.addEventListener("click", (e) => { if (e.target === dlg) closeDrawer(); });
-  dlg.addEventListener("cancel", (e) => { e.preventDefault(); closeDrawer(); });
-
-  // ---------- status pill + online detection ---------------------------
-  const net = document.getElementById("net");
-  const lbl = net.querySelector(".label");
-  function setNet(state, text) {
-    net.dataset.state = state;
-    lbl.textContent = text;
-  }
+  // ---------- Network status ----------
   function syncNet() {
-    setNet(navigator.onLine ? "online" : "offline", navigator.onLine ? "Online" : "Offline");
+    const online = navigator.onLine;
+    netPill.dataset.net = online ? "online" : "offline";
+    netLabel.textContent = online ? "Online" : "Offline";
   }
-  window.addEventListener("online",  () => { syncNet(); /* trigger sync */ });
-  window.addEventListener("offline", () => syncNet());
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNet(); });
+  window.addEventListener("online", () => { syncNet(); fetchNowBoard(); });
+  window.addEventListener("offline", syncNet);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { syncNet(); fetchNowBoard(); } });
   syncNet();
 
-  // ---------- toast helper --------------------------------------------
-  const toasts = document.getElementById("toasts");
-  function toast(msg) {
-    const t = document.createElement("div");
-    t.className = "toast";
-    t.textContent = msg;
-    toasts.appendChild(t);
-    setTimeout(() => t.remove(), 4000);
+  // ---------- Skeleton ----------
+  function renderSkeleton() {
+    board.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+      const sk = document.createElement("div");
+      sk.className = "skeleton-slot";
+      sk.setAttribute("aria-hidden", "true");
+      sk.innerHTML =
+        '<div class="skeleton-bar" style="width:44px;height:14px;"></div>' +
+        '<div style="display:grid;gap:4px;">' +
+          '<div class="skeleton-bar" style="width:60%;height:14px;"></div>' +
+          '<div class="skeleton-bar" style="width:40%;height:10px;"></div>' +
+        '</div>';
+      board.appendChild(sk);
+    }
   }
 
-  // ---------- stubbed capture + sync (real impl lives in sw.js) --------
-  document.getElementById("capture-btn").addEventListener("click", () => {
-    toast("Camera capture is wired through the service worker.");
-  });
-  document.getElementById("gps-btn").addEventListener("click", () => {
-    toast("GPS request dispatched.");
-  });
-  document.getElementById("sync-now").addEventListener("click", () => {
-    setNet("syncing", "Syncing…");
-    setTimeout(() => { setNet(navigator.onLine ? "online" : "offline", navigator.onLine ? "Online" : "Offline"); toast("Sync finished."); }, 1200);
-  });
+  // ---------- Render ----------
+  /**
+   * @param {NowBoardResponse} data
+   */
+  function renderTimeline(data) {
+    boardData = data;
+    board.innerHTML = "";
 
-  // Start at step 1.
-  setStep(0);
+    // Date header
+    dateLabel.textContent = formatDate(data.date);
+    dateWeekday.textContent = formatWeekday(data.date);
 
-  // ---------- service worker registration ------------------------------
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(() => { /* offline-only is fine */ });
+    // Sort slots by scheduled_start_at ascending
+    const sorted = [...data.slots].sort((a, b) =>
+      new Date(a.scheduled_start_at).getTime() - new Date(b.scheduled_start_at).getTime()
+    );
+
+    // Now-line position
+    const nowTime = new Date(data.current_time).getTime();
+
+    slots = [];
+
+    sorted.forEach((slot, i) => {
+      // Insert now-line before the first slot whose start is after now
+      if (i === 0 || (i > 0 && new Date(sorted[i - 1].scheduled_start_at).getTime() < nowTime && new Date(slot.scheduled_start_at).getTime() >= nowTime)) {
+        if (i === 0 && nowTime < new Date(sorted[0].scheduled_start_at).getTime()) {
+          const line = document.createElement("div");
+          line.className = "now-line";
+          line.setAttribute("data-time-indicator", "");
+          const timeSpan = document.createElement("span");
+          timeSpan.className = "now-line-time";
+          timeSpan.textContent = new Date(data.current_time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+          line.appendChild(timeSpan);
+          board.appendChild(line);
+        }
+      }
+
+      const el = document.createElement("article");
+      el.setAttribute("role", "article");
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("aria-label", `${slot.vendor_name}, ${formatTime(slot.scheduled_start_at)}, ${driftLabel(slot.drift_state, slot.drift_seconds)}`);
+      el.setAttribute("data-instance-id", slot.instance_id);
+      el.setAttribute("data-drift", slot.drift_state);
+      el.setAttribute("data-status", slot.status);
+      el.className = "slot";
+
+      const timeEl = document.createElement("div");
+      timeEl.className = "slot-time";
+      timeEl.textContent = formatTime(slot.scheduled_start_at);
+
+      const bodyEl = document.createElement("div");
+      bodyEl.className = "slot-body";
+
+      const vendorEl = document.createElement("div");
+      vendorEl.className = "slot-vendor";
+      vendorEl.textContent = slot.vendor_name;
+
+      const serviceEl = document.createElement("div");
+      serviceEl.className = "slot-service";
+      serviceEl.textContent = slot.service_type;
+
+      const driftEl = document.createElement("div");
+      driftEl.className = "slot-drift";
+      driftEl.textContent = driftLabel(slot.drift_state, slot.drift_seconds);
+
+      bodyEl.appendChild(vendorEl);
+      bodyEl.appendChild(serviceEl);
+      bodyEl.appendChild(driftEl);
+
+      if (slot.receipt_status) {
+        const receiptEl = document.createElement("div");
+        receiptEl.className = "slot-receipt";
+        receiptEl.textContent = "Receipt: " + slot.receipt_status;
+        bodyEl.appendChild(receiptEl);
+      }
+
+      // Action button for scheduled/due slots
+      if (slot.status === "scheduled" || slot.status === "due") {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "slot-action primary";
+        btn.textContent = "Start visit";
+        btn.setAttribute("aria-label", `Start visit for ${slot.vendor_name}`);
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleStartVisit(slot.instance_id);
+        });
+        bodyEl.appendChild(btn);
+      } else if (slot.status === "in_progress") {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "slot-action";
+        btn.textContent = "Confirm end";
+        btn.setAttribute("aria-label", `Confirm end for ${slot.vendor_name}`);
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleConfirmEnd(slot.instance_id);
+        });
+        bodyEl.appendChild(btn);
+      }
+
+      el.appendChild(timeEl);
+      el.appendChild(bodyEl);
+
+      el.addEventListener("click", () => {
+        focusSlot(i);
+      });
+
+      board.appendChild(el);
+      slots.push({ instance_id: slot.instance_id, element: el, data: slot });
+    });
   }
+
+  function renderEmpty() {
+    board.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "board-empty";
+    empty.innerHTML = "<p>No visits scheduled for today.</p><p>Connect a calendar to see upcoming service visits.</p>";
+    board.appendChild(empty);
+  }
+
+  function renderError(msg) {
+    board.innerHTML = "";
+    const err = document.createElement("div");
+    err.className = "board-error";
+    err.innerHTML = `<p>Failed to load visits.</p><p>${msg || "Please try again."}</p>`;
+    board.appendChild(err);
+  }
+
+  // ---------- Focus / keyboard navigation ----------
+  function focusSlot(index) {
+    if (index < 0 || index >= slots.length) return;
+    currentFocusIndex = index;
+    slots[index].element.focus({ preventScroll: false });
+  }
+
+  function navigateSlot(direction) {
+    if (slots.length === 0) return;
+    if (currentFocusIndex < 0) {
+      focusSlot(0);
+      return;
+    }
+    if (direction === "next") {
+      currentFocusIndex = (currentFocusIndex + 1) % slots.length;
+    } else {
+      currentFocusIndex = (currentFocusIndex - 1 + slots.length) % slots.length;
+    }
+    focusSlot(currentFocusIndex);
+  }
+
+  function activateSlot(slotId) {
+    const entry = slots.find(s => s.instance_id === slotId);
+    if (!entry) return;
+    if (entry.data.status === "scheduled" || entry.data.status === "due") {
+      handleStartVisit(slotId);
+    } else if (entry.data.status === "in_progress") {
+      handleConfirmEnd(slotId);
+    }
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (lateOverlay.hidden === false) return; // don't intercept when overlay is open
+    if (e.key === "ArrowDown" || e.key === "j") {
+      e.preventDefault();
+      navigateSlot("next");
+    } else if (e.key === "ArrowUp" || e.key === "k") {
+      e.preventDefault();
+      navigateSlot("prev");
+    } else if (e.key === "Enter") {
+      if (currentFocusIndex >= 0 && currentFocusIndex < slots.length) {
+        activateSlot(slots[currentFocusIndex].instance_id);
+      }
+    }
+  });
+
+  // ---------- Start Visit ----------
+  async function handleStartVisit(instanceId) {
+    const entry = slots.find(s => s.instance_id === instanceId);
+    if (!entry) return;
+
+    // Check if this is a late start (actual_start > scheduled_start + sla_window)
+    // For now, if the visit status is 'due' and current time exceeds scheduled start,
+    // we check the server response. If the server returns a requirement for a reason,
+    // we show the reason overlay.
+    const actualStartAt = new Date().toISOString();
+    const scheduledStart = new Date(entry.data.scheduled_start_at).getTime();
+    const now = Date.now();
+    const slaWindowMs = 5 * 60 * 1000; // 5 minutes default grace
+
+    if (now > scheduledStart + slaWindowMs) {
+      // Late start — need a reason
+      showLateReasonOverlay(instanceId);
+      return;
+    }
+
+    await submitStartVisit(instanceId, actualStartAt, null);
+  }
+
+  async function submitStartVisit(instanceId, actualStartAt, reason) {
+    const payload = {
+      actual_start_at: actualStartAt,
+      original_timestamp: actualStartAt,
+      ...(reason ? { late_tap_reason: reason } : {})
+    };
+
+    if (!navigator.onLine) {
+      // Queue for offline sync
+      await queueAction({
+        type: "start_visit",
+        instance_id: instanceId,
+        payload,
+        original_timestamp: actualStartAt
+      });
+      toast("Visit start queued (offline)");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiBase()}/visits/${instanceId}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || "Failed to start visit");
+        return;
+      }
+      toast("Visit started");
+      await fetchNowBoard();
+    } catch {
+      // Network error — queue offline
+      await queueAction({
+        type: "start_visit",
+        instance_id: instanceId,
+        payload,
+        original_timestamp: actualStartAt
+      });
+      toast("Visit start queued (offline)");
+    }
+  }
+
+  // ---------- Late reason overlay ----------
+  function showLateReasonOverlay(instanceId) {
+    lateReasonInstanceId = instanceId;
+    lateOverlay.hidden = false;
+    lateOverlay.setAttribute("aria-hidden", "false");
+    lateInput.value = "";
+    lateSubmit.disabled = true;
+    lateInput.focus();
+  }
+
+  function hideLateReasonOverlay() {
+    lateReasonInstanceId = null;
+    lateOverlay.hidden = true;
+    lateOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  lateInput.addEventListener("input", () => {
+    lateSubmit.disabled = lateInput.value.trim().length < 10;
+  });
+
+  lateCancel.addEventListener("click", () => {
+    hideLateReasonOverlay();
+  });
+
+  lateSubmit.addEventListener("click", () => {
+    if (lateInput.value.trim().length < 10 || !lateReasonInstanceId) return;
+    const reason = lateInput.value.trim();
+    const instanceId = lateReasonInstanceId;
+    hideLateReasonOverlay();
+    submitStartVisit(instanceId, new Date().toISOString(), reason);
+  });
+
+  // ---------- Confirm End ----------
+  async function handleConfirmEnd(instanceId) {
+    const actualEndAt = new Date().toISOString();
+    const payload = {
+      actual_end_at: actualEndAt,
+      original_timestamp: actualEndAt
+    };
+
+    if (!navigator.onLine) {
+      await queueAction({
+        type: "confirm_end",
+        instance_id: instanceId,
+        payload,
+        original_timestamp: actualEndAt
+      });
+      toast("Visit end queued (offline)");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiBase()}/visits/${instanceId}/end`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || "Failed to confirm end");
+        return;
+      }
+      toast("Visit end confirmed");
+      await fetchNowBoard();
+    } catch {
+      await queueAction({
+        type: "confirm_end",
+        instance_id: instanceId,
+        payload,
+        original_timestamp: actualEndAt
+      });
+      toast("Visit end queued (offline)");
+    }
+  }
+
+  // ---------- Fetch now board ----------
+  async function fetchNowBoard() {
+    const base = apiBase();
+    const url = `${base}/now-board`;
+
+    try {
+      const res = await fetch(url);
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!res.ok) {
+        renderError("Server error. Please try again.");
+        return;
+      }
+      const data = await res.json();
+
+      // Validate contract
+      if (!data || !Array.isArray(data.slots)) {
+        renderError("Invalid response from server.");
+        return;
+      }
+
+      if (data.slots.length === 0) {
+        renderEmpty();
+        return;
+      }
+
+      renderTimeline(data);
+    } catch {
+      // Network error — show last cached data or skeleton
+      renderError("Network error. Please check your connection.");
+    }
+  }
+
+  // ---------- Offline queue (IndexedDB) ----------
+  const DB_NAME = "desklog-offline";
+  const DB_VERSION = 1;
+  const STORE_NAME = "actions";
+  let db = null;
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains(STORE_NAME)) {
+          const store = database.createObjectStore(STORE_NAME, { keyPath: "id" });
+          store.createIndex("by_status", "status");
+          store.createIndex("by_type", "type");
+          store.createIndex("by_queued_at", "queued_at");
+        }
+      };
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        resolve(db);
+      };
+      request.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  function generateId() {
+    return `${Date.now()}-${crypto.getRandomValues(new Uint8Array(16)).reduce((s, b) => s + b.toString(16).padStart(2, "0"), "")}`;
+  }
+
+  async function queueAction(action) {
+    if (!action.type || !action.instance_id || !action.original_timestamp) {
+      throw new Error("Missing required fields: type, instance_id, original_timestamp");
+    }
+
+    const db_ = db || await openDB();
+    const record = {
+      id: generateId(),
+      type: action.type,
+      instance_id: action.instance_id,
+      payload: action.payload || {},
+      original_timestamp: action.original_timestamp,
+      queued_at: Date.now(),
+      retry_count: 0,
+      status: "pending"
+    };
+
+    return new Promise((resolve, reject) => {
+      const tx = db_.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.add(record);
+      req.onsuccess = () => resolve(record.id);
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function getPendingActions() {
+    const db_ = db || await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db_.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const index = store.index("by_status");
+      const req = index.getAll("pending");
+      req.onsuccess = () => {
+        const results = req.result.sort((a, b) => a.queued_at - b.queued_at);
+        resolve(results);
+      };
+      req.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function markCompleted(id) {
+    const db_ = db || await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db_.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const record = getReq.result;
+        if (record) {
+          store.delete(id);
+        }
+        resolve();
+      };
+      getReq.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function markFailed(id, error) {
+    const db_ = db || await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db_.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const getReq = store.get(id);
+      getReq.onsuccess = () => {
+        const record = getReq.result;
+        if (record) {
+          record.retry_count = (record.retry_count || 0) + 1;
+          record.last_error = error;
+          store.put(record);
+        }
+        resolve();
+      };
+      getReq.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  async function replayActions() {
+    const pending = await getPendingActions();
+    const success = [];
+    const failed = [];
+
+    for (const action of pending) {
+      const endpoints = {
+        start_visit: `/visits/${action.instance_id}/start`,
+        confirm_end: `/visits/${action.instance_id}/end`,
+        sign_receipt: `/visits/${action.instance_id}/sign`,
+        file_override: `/visits/${action.instance_id}/override`,
+        update_note: `/visits/${action.instance_id}/note`
+      };
+
+      const endpoint = endpoints[action.type];
+      if (!endpoint) {
+        failed.push(action.id);
+        continue;
+      }
+
+      try {
+        const body = {
+          ...action.payload,
+          original_timestamp: action.original_timestamp
+        };
+
+        const res = await fetch(`${apiBase()}${endpoint}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": action.id
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (res.status === 409) {
+          // Conflict — surface for resolution
+          failed.push(action.id);
+          await markFailed(action.id, "Conflict: state already changed");
+        } else if (res.ok) {
+          await markCompleted(action.id);
+          success.push(action.id);
+        } else {
+          failed.push(action.id);
+          await markFailed(action.id, `HTTP ${res.status}`);
+        }
+      } catch {
+        failed.push(action.id);
+        await markFailed(action.id, "Network error");
+      }
+    }
+
+    return { success, failed };
+  }
+
+  async function clearCompleted() {
+    const db_ = db || await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db_.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = (e) => reject(e.target.error);
+    });
+  }
+
+  // ---------- Online sync ----------
+  window.addEventListener("online", async () => {
+    const pending = await getPendingActions();
+    if (pending.length > 0) {
+      netPill.dataset.net = "syncing";
+      netLabel.textContent = "Syncing…";
+      await replayActions();
+      syncNet();
+      await fetchNowBoard();
+    }
+  });
+
+  // ---------- Init ----------
+  async function init() {
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      try {
+        await navigator.serviceWorker.register("./sw.js");
+      } catch {
+        // Service worker registration failed — offline may not work, but app still functions
+      }
+    }
+
+    // Open IndexedDB
+    await openDB();
+
+    // Render skeleton immediately
+    renderSkeleton();
+
+    // Fetch board data
+    await fetchNowBoard();
+  }
+
+  init();
 })();
 </script>
 </body>

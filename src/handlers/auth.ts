@@ -9,6 +9,12 @@ const SALT_BYTES = 16;
 const TOKEN_BYTES = 32; // 256 bits
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+// Magic link constants for counterparty signing
+const MAGIC_LINK_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MAGIC_LINK_TOKEN_BYTES = 32;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10;
+
 function toHex(buf: ArrayBuffer | Uint8Array): string {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
@@ -75,6 +81,47 @@ async function startSession(env: Env, userId: number): Promise<string> {
     .bind(userId, tokenHash, new Date(now).toISOString(), new Date(now + SESSION_TTL_MS).toISOString())
     .run();
   return sessionCookie(token, Math.floor(SESSION_TTL_MS / 1000));
+}
+
+// ---- rate limiting ----------------------------------------------------------------
+
+interface RateLimitKey {
+  key: string;
+  windowStart: number;
+  count: number;
+}
+
+async function checkRateLimit(env: Env, identifier: string, windowMs: number, maxRequests: number): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const now = Date.now();
+  const windowKey = Math.floor(now / windowMs);
+  const rateKey = `rate:${identifier}:${windowKey}`;
+  
+  // Try to get current count from KV
+  const current = await env.RATE_LIMIT?.get(rateKey);
+  let count = 0;
+  
+  if (current) {
+    try {
+      const data = JSON.parse(current) as RateLimitKey;
+      if (data.windowStart === windowKey) {
+        count = data.count;
+      }
+    } catch {
+      // Invalid data, treat as fresh
+    }
+  }
+  
+  if (count >= maxRequests) {
+    const retryAfter = ((windowKey + 1) * windowMs) - now;
+    return { allowed: false, retryAfter };
+  }
+  
+  // Increment count
+  const newData: RateLimitKey = { key: identifier, windowStart: windowKey, count: count + 1 };
+  const ttl = Math.ceil((windowMs * 2) / 1000); // 2 windows worth of TTL
+  await env.RATE_LIMIT?.put(rateKey, JSON.stringify(newData), { expirationTtl: ttl });
+  
+  return { allowed: true };
 }
 
 // ---- requireSession / requireRole — the primitives every other handler calls ---
@@ -696,4 +743,244 @@ export const userInvite: Handler<{ invite: string; expires_at: string } | { erro
   if (resetUserId) await audit(env, user, "reset", "users", resetUserId, { expires_at: expiresAt });
   else await audit(env, user, "create", "invites", res.meta.last_row_id, { expires_at: expiresAt });
   return json({ invite: token, expires_at: expiresAt });
+};
+
+// ---- Magic Link handlers for counterparty signing --------------------------------
+
+interface MagicLinkIssueBody {
+  instance_id: number;
+  vendor_contact_id: number;
+  channel: "sms" | "email";
+}
+
+interface MagicLinkIssueResponse {
+  token_id: number;
+  magic_link: string;
+  expires_at: string;
+}
+
+/**
+ * Issue a magic link for counterparty signing. Called by office manager when
+ * initiating a visit that requires counterparty signature. The magic link
+ * authenticates the counterparty for a single VisitInstance without creating
+ * a User account.
+ */
+export const issueMagicLink: Handler<MagicLinkIssueResponse | { error: string }> = async (req, env) => {
+  const user = await requireSession(req, env);
+  if (!user) return json({ error: "unauthenticated" }, 401);
+  noteTenant(req, user.tenant);
+  const forbidden = requireRole(user, WRITE_ROLES);
+  if (forbidden) return forbidden;
+
+  // Rate limit magic link issuance per office manager
+  const rateLimitKey = `magiclink:${user.id}`;
+  const rateLimit = await checkRateLimit(env, rateLimitKey, RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS);
+  if (!rateLimit.allowed) {
+    return json({ error: "rate limited", retry_after_ms: rateLimit.retryAfter }, 429);
+  }
+
+  const body = await readJson<MagicLinkIssueBody>(req);
+  const instanceId = Math.trunc(Number(body?.instance_id));
+  const vendorContactId = Math.trunc(Number(body?.vendor_contact_id));
+  const channel = body?.channel;
+
+  if (!Number.isInteger(instanceId) || instanceId <= 0) {
+    return json({ error: "instance_id is required" }, 400);
+  }
+  if (!Number.isInteger(vendorContactId) || vendorContactId <= 0) {
+    return json({ error: "vendor_contact_id is required" }, 400);
+  }
+  if (channel !== "sms" && channel !== "email") {
+    return json({ error: "channel must be 'sms' or 'email'" }, 400);
+  }
+
+  // Verify the instance exists and belongs to this tenant
+  const instance = await env.DB.prepare(
+    "SELECT instance_id FROM visit_instances WHERE instance_id = ? AND tenant_id = ?"
+  )
+    .bind(instanceId, user.tenant)
+    .first<{ instance_id: number }>();
+  if (!instance) return json({ error: "instance not found" }, 404);
+
+  // Verify the vendor contact exists and belongs to this tenant
+  const contact = await env.DB.prepare(
+    "SELECT vendor_contact_id, magic_link_enabled FROM vendor_contacts WHERE vendor_contact_id = ? AND tenant_id = ?"
+  )
+    .bind(vendorContactId, user.tenant)
+    .first<{ vendor_contact_id: number; magic_link_enabled: number }>();
+  if (!contact) return json({ error: "vendor contact not found" }, 404);
+  if (!contact.magic_link_enabled) {
+    return json({ error: "magic links not enabled for this contact" }, 400);
+  }
+
+  // Generate the magic token
+  const tokenPlain = toHex(crypto.getRandomValues(new Uint8Array(MAGIC_LINK_TOKEN_BYTES)));
+  const tokenHash = await sha256Hex(tokenPlain);
+  const expiresAt = new Date(Date.now() + MAGIC_LINK_TTL_MS).toISOString();
+
+  // Store the counterparty token
+  const res = await env.DB.prepare(
+    "INSERT INTO counterparty_tokens (tenant_id, instance_id, vendor_contact_id, token_hash, channel, issued_at, expires_at, consumed_at, ip_hash_at_consume) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL)"
+  )
+    .bind(user.tenant, instanceId, vendorContactId, tokenHash, channel, new Date().toISOString(), expiresAt)
+    .run();
+
+  const tokenId = res.meta.last_row_id;
+
+  // Build the magic link URL (hostname from request, or env override)
+  const url = new URL(req.url);
+  const baseUrl = env.PUBLIC_URL || `${url.protocol}//${url.host}`;
+  const magicLink = `${baseUrl}/s/${tokenPlain}`;
+
+  // Audit the issuance
+  await audit(env, user, "issue_magic_link", "counterparty_tokens", tokenId, {
+    instance_id: instanceId,
+    vendor_contact_id: vendorContactId,
+    channel,
+  });
+
+  return json({
+    token_id: tokenId,
+    magic_link: magicLink,
+    expires_at: expiresAt,
+  });
+};
+
+interface MagicLinkValidateBody {
+  token: string;
+}
+
+interface MagicLinkValidateResponse {
+  token_id: number;
+  instance_id: number;
+  vendor_contact_id: number;
+  valid: boolean;
+  expires_at: string;
+}
+
+/**
+ * Validate a magic link token. Called when counterparty clicks the magic link.
+ * Returns token details if valid and not yet consumed. Does NOT consume the token.
+ */
+export const validateMagicLink: Handler<MagicLinkValidateResponse | { error: string }> = async (req, env) => {
+  const body = await readJson<MagicLinkValidateBody>(req);
+  const token = body?.token?.trim();
+
+  if (!token) return json({ error: "token is required" }, 400);
+
+  const tokenHash = await sha256Hex(token);
+  const now = new Date().toISOString();
+
+  const row = await env.DB.prepare(
+    "SELECT token_id, tenant_id, instance_id, vendor_contact_id, expires_at, consumed_at FROM counterparty_tokens WHERE token_hash = ? AND expires_at > ?"
+  )
+    .bind(tokenHash, now)
+    .first<{
+      token_id: number;
+      tenant_id: string;
+      instance_id: number;
+      vendor_contact_id: number;
+      expires_at: string;
+      consumed_at: string | null;
+    }>();
+
+  if (!row) return json({ error: "invalid or expired token" }, 400);
+  if (row.consumed_at) return json({ error: "token already used" }, 400);
+
+  // Note tenant for audit purposes (this is a cross-tenant access point, so we track it)
+  noteTenant(req, row.tenant_id);
+
+  return json({
+    token_id: row.token_id,
+    instance_id: row.instance_id,
+    vendor_contact_id: row.vendor_contact_id,
+    valid: true,
+    expires_at: row.expires_at,
+  });
+};
+
+interface MagicLinkConsumeBody {
+  token: string;
+}
+
+interface MagicLinkConsumeResponse {
+  token_id: number;
+  instance_id: number;
+  consumed_at: string;
+}
+
+/**
+ * Consume a magic link token. Called when counterparty confirms signing.
+ * Marks token as consumed and records IP hash for audit.
+ */
+export const consumeMagicLink: Handler<MagicLinkConsumeResponse | { error: string }> = async (req, env) => {
+  const body = await readJson<MagicLinkConsumeBody>(req);
+  const token = body?.token?.trim();
+
+  if (!token) return json({ error: "token is required" }, 400);
+
+  // Rate limit consumption attempts per token
+  const rateLimitKey = `consume:${token.slice(0, 16)}`;
+  const rateLimit = await checkRateLimit(env, rateLimitKey, RATE_LIMIT_WINDOW_MS, 5);
+  if (!rateLimit.allowed) {
+    return json({ error: "too many attempts", retry_after_ms: rateLimit.retryAfter }, 429);
+  }
+
+  const tokenHash = await sha256Hex(token);
+  const now = new Date().toISOString();
+
+  // Get client IP for audit (behind proxy, check X-Forwarded-For)
+  const clientIp = req.headers.get("x-forwarded-for") || "unknown";
+  const ipHash = await sha256Hex(clientIp);
+
+  // Conditional consume: only if not already consumed and not expired
+  const res = await env.DB.prepare(
+    "UPDATE counterparty_tokens SET consumed_at = ?, ip_hash_at_consume = ? WHERE token_hash = ? AND consumed_at IS NULL AND expires_at > ?"
+  )
+    .bind(now, ipHash, tokenHash, now)
+    .run();
+
+  if (!res.meta.changes) {
+    // Check why it failed (expired vs already consumed vs invalid)
+    const existing = await env.DB.prepare(
+      "SELECT consumed_at, expires_at FROM counterparty_tokens WHERE token_hash = ?"
+    )
+      .bind(tokenHash)
+      .first<{ consumed_at: string | null; expires_at: string }>();
+
+    if (!existing) return json({ error: "invalid token" }, 400);
+    if (existing.consumed_at) return json({ error: "token already used" }, 400);
+    if (existing.expires_at <= now) return json({ error: "token expired" }, 400);
+    return json({ error: "token consumption failed" }, 500);
+  }
+
+  // Get the consumed token details
+  const row = await env.DB.prepare(
+    "SELECT token_id, tenant_id, instance_id FROM counterparty_tokens WHERE token_hash = ?"
+  )
+    .bind(tokenHash)
+    .first<{ token_id: number; tenant_id: string; instance_id: number }>();
+
+  if (!row) return json({ error: "token not found after consumption" }, 500);
+
+  noteTenant(req, row.tenant_id);
+
+  // Audit the consumption (system actor since no user session)
+  const systemActor: AuthUser = {
+    id: 0,
+    tenant: row.tenant_id,
+    role: "site_supervisor", // System uses highest role for audit purposes
+    email: "system@desklog.app",
+  };
+
+  await audit(env, systemActor, "consume_magic_link", "counterparty_tokens", row.token_id, {
+    instance_id: row.instance_id,
+    ip_hash: ipHash,
+  });
+
+  return json({
+    token_id: row.token_id,
+    instance_id: row.instance_id,
+    consumed_at: now,
+  });
 };
