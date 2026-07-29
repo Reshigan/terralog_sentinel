@@ -1,0 +1,144 @@
+# Desklog — Cloudflare Workers configuration
+# Multi-tenant SaaS: control plane + per-tenant D1 databases, R2 for evidence, KV for sessions
+
+name = "desklog"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# ---- Cron triggers -------------------------------------------------------------
+# Hourly: Merkle root snapshot
+# Nightly: score recomputation, anomaly detection, digest generation
+# Weekly: retention purge check
+[triggers]
+crons = ["0 * * * *", "0 2 * * *", "0 9 * * 1"]
+
+# ---- D1 databases ---------------------------------------------------------------
+# Control plane: tenant registry, global user identity index, billing, audit log
+# Tenant databases: per-tenant transactional data (bound at runtime via Workers for Platforms)
+[[d1_databases]]
+binding = "DB_CONTROL"
+database_name = "desklog-control"
+database_id = "REPLACE_ME_CONTROL_DB_ID"
+
+# ---- R2 buckets -----------------------------------------------------------------
+# Evidence storage: photos, dispute snapshot PDFs/JSONs
+[[r2_buckets]]
+binding = "BUCKET_EVIDENCE"
+bucket_name = "desklog-evidence"
+
+# ---- KV namespaces --------------------------------------------------------------
+# Session state, rate limiting, tenant registry lookup
+[[kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "REPLACE_ME_SESSIONS_KV_ID"
+
+[[kv_namespaces]]
+binding = "KV_RATE_LIMIT"
+id = "REPLACE_ME_RATE_LIMIT_KV_ID"
+
+[[kv_namespaces]]
+binding = "KV_TENANT_REGISTRY"
+id = "REPLACE_ME_TENANT_REGISTRY_KV_ID"
+
+# ---- Queue bindings -------------------------------------------------------------
+# Async work: calendar sync, notifications, score computation, anomaly detection
+[[queues]]
+binding = "QUEUE_CALENDAR_SYNC"
+queue = "desklog-calendar-sync"
+
+[[queues]]
+binding = "QUEUE_NOTIFICATIONS"
+queue = "desklog-notifications"
+
+[[queues]]
+binding = "QUEUE_SCORE_COMPUTATION"
+queue = "desklog-score-computation"
+
+[[queues]]
+binding = "QUEUE_ANOMALY_DETECTION"
+queue = "desklog-anomaly-detection"
+
+# ---- Environment variables (secrets use `wrangler secret put`) ------------------
+[vars]
+# Public key fingerprint prefix length for signatures (8 bytes = 16 hex chars)
+SIGNING_KEY_FINGERPRINT_BYTES = "8"
+# Default SLA window in minutes
+DEFAULT_SLA_WINDOW_MINUTES = "15"
+# Signing window expiry in hours
+SIGNING_WINDOW_HOURS = "24"
+# Retention defaults (days)
+DEFAULT_RETENTION_DAYS_LEDGER = "2555"
+DEFAULT_RETENTION_DAYS_RECEIPTS = "2555"
+# Score bands
+SCORE_BAND_OK = "80"
+SCORE_BAND_WARNING = "60"
+# Anomaly detection threshold (MAD multiplier)
+ANOMALY_MAD_THRESHOLD = "2"
+
+# ---- Secrets (set via `wrangler secret put`) -----------------------------------
+# SIGNING_KEY_MASTER: Master HMAC key for tenant signing key derivation
+# ENCRYPTION_KEY_MASTER: Master key for per-tenant data encryption
+# KMS_WRAPPING_KEY: Cloudflare Workers KV encryption key ID
+
+# ---- Local development overrides ------------------------------------------------
+[env.dev]
+name = "desklog-dev"
+
+[env.dev.d1_databases]
+binding = "DB_CONTROL"
+database_name = "desklog-control-dev"
+database_id = "local"
+
+[env.dev.r2_buckets]
+binding = "BUCKET_EVIDENCE"
+bucket_name = "desklog-evidence-dev"
+
+# ---- Staging environment -------------------------------------------------------
+[env.staging]
+name = "desklog-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB_CONTROL"
+database_name = "desklog-control-staging"
+database_id = "REPLACE_ME_STAGING_CONTROL_DB_ID"
+
+[[env.staging.r2_buckets]]
+binding = "BUCKET_EVIDENCE"
+bucket_name = "desklog-evidence-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "REPLACE_ME_STAGING_SESSIONS_KV_ID"
+
+[[env.staging.kv_namespaces]]
+binding = "KV_RATE_LIMIT"
+id = "REPLACE_ME_STAGING_RATE_LIMIT_KV_ID"
+
+[[env.staging.kv_namespaces]]
+binding = "KV_TENANT_REGISTRY"
+id = "REPLACE_ME_STAGING_TENANT_REGISTRY_KV_ID"
+
+# ---- Production environment ----------------------------------------------------
+[env.production]
+name = "desklog"
+
+[[env.production.d1_databases]]
+binding = "DB_CONTROL"
+database_name = "desklog-control"
+database_id = "REPLACE_ME_PROD_CONTROL_DB_ID"
+
+[[env.production.r2_buckets]]
+binding = "BUCKET_EVIDENCE"
+bucket_name = "desklog-evidence-prod"
+
+[[env.production.kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "REPLACE_ME_PROD_SESSIONS_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "KV_RATE_LIMIT"
+id = "REPLACE_ME_PROD_RATE_LIMIT_KV_ID"
+
+[[env.production.kv_namespaces]]
+binding = "KV_TENANT_REGISTRY"
+id = "REPLACE_ME_PROD_TENANT_REGISTRY_KV_ID"

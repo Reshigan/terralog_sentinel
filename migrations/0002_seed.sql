@@ -1,55 +1,260 @@
--- GENERATED seed (skipped in tests, applied on deploy).
-INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level) VALUES ('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Mobile Safari/537.36', 1080, 1920, 4, '2026-03-14', 'tech1@field.example', 'active', 85);
-INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level) VALUES ('Atlas Device', 125, 125, 125, '2026-01-15', 'ops2@device.example.com', 'lost', 125);
-INSERT INTO devices (user_agent, screen_width, screen_height, hardware_concurrency, last_seen, technician_email, status, battery_level) VALUES ('Meridian Device', 150, 150, 150, '2026-01-24', 'ops3@device.example.com', 'retired', 150);
-INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at) VALUES (5, 'erase_key', 1, '2026-03-01', '2026-03-01');
-INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at) VALUES (125, 'notify_user', 0, '2026-01-15', '2026-01-15');
-INSERT INTO sync_thresholds (max_attempts, action, is_active, created_at, updated_at) VALUES (150, 'disable_device', 1, '2026-01-24', '2026-01-24');
-INSERT INTO passphrases (hash, salt, is_set, set_at, device_id, failed_attempts) VALUES ('pbkdf2_sha256_hash', 'passphrase_salt', 1, '2026-03-14', 1, 0);
-INSERT INTO passphrases (hash, salt, is_set, set_at, device_id, failed_attempts) VALUES ('Atlas Passphrase', 'Atlas Passphrase', 0, '2026-01-15', 2, 125);
-INSERT INTO passphrases (hash, salt, is_set, set_at, device_id, failed_attempts) VALUES ('Meridian Passphrase', 'Meridian Passphrase', 1, '2026-01-24', 3, 150);
-INSERT INTO connectivity_zones (name, polygon_geojson, sync_success_rate, last_updated, technician_email, status) VALUES ('Zone_A', '{"type":"Polygon","coordinates":[[[-118.25,34.04],[-118.23,34.04],[-118.23,34.06],[-118.25,34.06],[-118.25,34.04]]]}', 0.85, '2026-03-14', 'supervisor@field.example', 'active');
-INSERT INTO connectivity_zones (name, polygon_geojson, sync_success_rate, last_updated, technician_email, status) VALUES ('Atlas Connectivity zone', 'Atlas Connectivity zone', 2190.75, '2026-01-15', 'ops2@connectivityzone.example.com', 'monitoring');
-INSERT INTO connectivity_zones (name, polygon_geojson, sync_success_rate, last_updated, technician_email, status) VALUES ('Meridian Connectivity zone', 'Meridian Connectivity zone', 3131, '2026-01-24', 'ops3@connectivityzone.example.com', 'degraded');
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('supervisor@field.example', 'outlier_detected', 'Outlier detected at Pipeline_Alpha_03', 0, '2026-03-14T10:10:00Z', 1, 'reading');
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('ops2@notification.example.com', 'outlier_detected', 'Atlas Notification', 0, '2026-01-15', 125, 'site_visit');
-INSERT INTO notifications (recipient_email, type, content, is_read, created_at, related_entity_id, related_entity_type) VALUES ('ops3@notification.example.com', 'visit_reminder', 'Meridian Notification', 1, '2026-01-24', 150, 'equipment');
-INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id) VALUES ('Standard', 20, 3, 3600, 1, '2026-03-01', '2026-03-01', 1);
-INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id) VALUES ('Atlas Sync policy', 125, 125, 125, 0, '2026-01-15', '2026-01-15', 2);
-INSERT INTO sync_policys (name, min_battery_level, min_network_strength, retry_interval, is_active, created_at, updated_at, zone_id) VALUES ('Meridian Sync policy', 150, 150, 150, 1, '2026-01-24', '2026-01-24', 3);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('reading', 1, 'create', '2026-03-14T10:00:00Z', 'tech1@field.example', '{"photo":"base64_encoded_jpeg","numeric_value":48.5}', 1);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('Atlas Audit trail', 125, 'update', '2026-01-15', 'Atlas Audit trail', 'Atlas Audit trail', 2);
-INSERT INTO audit_trails (entity_type, entity_id, action, performed_at, performed_by, metadata, device_id) VALUES ('Meridian Audit trail', 150, 'delete', '2026-01-24', 'Meridian Audit trail', 'Meridian Audit trail', 3);
-INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id) VALUES ('Pipeline_Alpha_03', 34.0522, -118.2437, 45.2, 3.1, '2026-03-14', 0.92, 'tech1@field.example', 'active', 1);
-INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id) VALUES ('Atlas Site', 125.5, 125.5, 2190.75, 125.5, '2026-01-15', 2190.75, 'ops2@site.example.com', 'maintenance', 2);
-INSERT INTO sites (name, latitude, longitude, mean_value, std_dev, last_sync, sync_success_rate, technician_email, status, zone_id) VALUES ('Meridian Site', 150.5, 150.5, 3131, 150.5, '2026-01-24', 3131, 'ops3@site.example.com', 'decommissioned', 3);
-INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id) VALUES ('pbkdf2_sha256_derived_key', 'device_salt_sha256', 100000, 'Mozilla/5.0_1080_1920_4', '2026-03-14', 1, 1);
-INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id) VALUES ('Atlas Encryption key', 'Atlas Encryption key', 125, 'Atlas Encryption key', '2026-01-15', 0, 2);
-INSERT INTO encryption_keys (derived_key, salt, iterations, device_fingerprint, created_at, is_active, device_id) VALUES ('Meridian Encryption key', 'Meridian Encryption key', 150, 'Meridian Encryption key', '2026-01-24', 1, 3);
-INSERT INTO daily_aggregates (date, total_readings, synced_readings, failed_readings, avg_numeric_value, site_id, zone_id) VALUES ('2026-03-14', 1, 1, 0, 48.5, 1, 1);
-INSERT INTO daily_aggregates (date, total_readings, synced_readings, failed_readings, avg_numeric_value, site_id, zone_id) VALUES ('2026-01-15', 2190, 125, 125, 2190.75, 2, 2);
-INSERT INTO daily_aggregates (date, total_readings, synced_readings, failed_readings, avg_numeric_value, site_id, zone_id) VALUES ('2026-01-24', 3130, 150, 150, 3131, 3, 3);
-INSERT INTO equipments (serial_number, type, installation_date, last_calibration, site_id, status, warranty_expiry) VALUES ('SN-2026-001', 'sensor', '2026-01-15', '2026-02-20', 1, 'active', '2028-01-15');
-INSERT INTO equipments (serial_number, type, installation_date, last_calibration, site_id, status, warranty_expiry) VALUES ('EQU-1002', 'camera', '2026-01-15', '2026-01-15', 2, 'maintenance', '2026-01-15');
-INSERT INTO equipments (serial_number, type, installation_date, last_calibration, site_id, status, warranty_expiry) VALUES ('EQU-1003', 'gps_unit', '2026-01-24', '2026-01-24', 3, 'retired', '2026-01-24');
-INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email) VALUES (1, '2026-09-20', 'calibration', 'planned', 'Next calibration due', 'tech1@field.example');
-INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email) VALUES (2, '2026-01-15', 'corrective', 'completed', 'Maintenance schedule 2 reviewed by operations; no exceptions outstanding.', 'ops2@maintenanceschedule.example.com');
-INSERT INTO maintenance_schedules (equipment_id, scheduled_date, type, status, notes, technician_email) VALUES (3, '2026-01-24', 'calibration', 'cancelled', 'Maintenance schedule 3 reviewed by operations; no exceptions outstanding.', 'ops3@maintenanceschedule.example.com');
-INSERT INTO site_visits (site_id, visit_date, purpose, notes, technician_email, status, equipment_id) VALUES (1, '2026-03-20', 'inspection', 'Routine inspection', 'tech1@field.example', 'planned', 1);
-INSERT INTO site_visits (site_id, visit_date, purpose, notes, technician_email, status, equipment_id) VALUES (2, '2026-01-15', 'maintenance', 'Site visit 2 reviewed by operations; no exceptions outstanding.', 'ops2@sitevisit.example.com', 'completed', 2);
-INSERT INTO site_visits (site_id, visit_date, purpose, notes, technician_email, status, equipment_id) VALUES (3, '2026-01-24', 'installation', 'Site visit 3 reviewed by operations; no exceptions outstanding.', 'ops3@sitevisit.example.com', 'cancelled', 3);
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id) VALUES ('base64_encoded_jpeg', 34.0522, -118.2437, 48.5, '2026-03-14T10:00:00Z', 'aes256_gcm_encrypted_json', 'synced', 1, 'terminus-field-uuidv5-hash', 1, 1, 1, NULL);
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id) VALUES ('Atlas Reading', 125.5, 125.5, 2190.75, '2026-01-15', 'Atlas Reading', 'synced', 125, 'Atlas Reading', 2, 2, 2, NULL);
-INSERT INTO readings (photo, latitude, longitude, numeric_value, timestamp, encrypted_blob, sync_status, sync_attempts, dedupe_id, site_id, device_id, equipment_id, calibration_id) VALUES ('Meridian Reading', 150.5, 150.5, 3131, '2026-01-24', 'Meridian Reading', 'failed', 150, 'Meridian Reading', 3, 3, 3, NULL);
-INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id) VALUES (1, '2026-03-14T10:05:00Z', 'success', 200, '', 1);
-INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id) VALUES (2, '2026-01-15', 'failure', 125, 'Atlas Sync log', 2);
-INSERT INTO sync_logs (reading_id, attempted_at, status, response_code, error_message, sync_policy_id) VALUES (3, '2026-01-24', 'retry', 150, 'Meridian Sync log', 3);
-INSERT INTO outliers (reading_id, detected_at, z_score, is_resolved, resolved_at, resolved_by, site_id, notification_id) VALUES (1, '2026-03-14T10:10:00Z', 2.1, 0, NULL, '', 1, 1);
-INSERT INTO outliers (reading_id, detected_at, z_score, is_resolved, resolved_at, resolved_by, site_id, notification_id) VALUES (2, '2026-01-15', 125.5, 0, '2026-01-15', 'Atlas Outlier', 2, 2);
-INSERT INTO outliers (reading_id, detected_at, z_score, is_resolved, resolved_at, resolved_by, site_id, notification_id) VALUES (3, '2026-01-24', 150.5, 1, '2026-01-24', 'Meridian Outlier', 3, 3);
-INSERT INTO reading_historys (reading_id, changed_field, old_value, new_value, changed_at, changed_by, revision_id) VALUES (1, 'sync_status', 'pending', 'synced', '2026-03-14T10:05:00Z', 'system', 1);
-INSERT INTO reading_historys (reading_id, changed_field, old_value, new_value, changed_at, changed_by, revision_id) VALUES (2, 'Atlas Reading history', 'Atlas Reading history', 'Atlas Reading history', '2026-01-15', 'Atlas Reading history', 125);
-INSERT INTO reading_historys (reading_id, changed_field, old_value, new_value, changed_at, changed_by, revision_id) VALUES (3, 'Meridian Reading history', 'Meridian Reading history', 'Meridian Reading history', '2026-01-24', 'Meridian Reading history', 150);
-INSERT INTO calibration_logs (equipment_id, calibrated_at, calibrated_by, next_calibration, notes, status, reading_id) VALUES (1, '2026-02-20', 'tech1@field.example', '2026-08-20', 'Calibration passed', 'passed', 1);
-INSERT INTO calibration_logs (equipment_id, calibrated_at, calibrated_by, next_calibration, notes, status, reading_id) VALUES (2, '2026-01-15', 'Atlas Calibration log', '2026-01-15', 'Calibration log 2 reviewed by operations; no exceptions outstanding.', 'failed', 2);
-INSERT INTO calibration_logs (equipment_id, calibrated_at, calibrated_by, next_calibration, notes, status, reading_id) VALUES (3, '2026-01-24', 'Meridian Calibration log', '2026-01-24', 'Calibration log 3 reviewed by operations; no exceptions outstanding.', 'pending_review', 3);
+-- GENERATED seed for Desklog demo tenant 'acme-firm'.
+-- Demonstrates the "now" board with scheduled, in-progress, completed, and missed visits.
+
+-- Clear existing seed data first (idempotent for re-runs).
+DELETE FROM visit_receipts WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM signatures WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM ledger_entries WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM visit_instances WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM visit_templates WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM staff_members WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM vendor_contacts WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM vendors WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM calendar_events WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM calendar_connections WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM sessions WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM users WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM counterparty_tokens WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM notifications WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM dispute_snapshots WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM vendor_scores WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM staff_scores WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM manual_overrides WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM retention_policies WHERE tenant_id = (SELECT tenant_id FROM tenants WHERE slug = 'acme-firm');
+DELETE FROM tenants WHERE slug = 'acme-firm';
+
+-- Demo retention policy (California: 7 years minimum)
+INSERT INTO retention_policies (policy_id, tenant_id, jurisdiction, min_retention_days, min_retention_days_receipts, legal_hold, redact_pii_after_days, policy_source, created_at, updated_at)
+VALUES ('rp-acme-001', 'tenant-acme-001', 'US-CA', 2555, 2555, FALSE, 365, 'template', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z');
+
+-- Demo tenant
+INSERT INTO tenants (tenant_id, slug, display_name, plan_tier, jurisdiction, retention_policy_id, created_at, suspended_at, ledger_head_hash)
+VALUES ('tenant-acme-001', 'acme-firm', 'ACME Accounting Firm', 'pro', 'US-CA', 'rp-acme-001', '2026-01-01T00:00:00Z', NULL, 'genesis_hash_acme_001');
+
+-- Demo users (Diane, Marco, Priya as office managers; Sandra as owner)
+INSERT INTO users (user_id, tenant_id, email, phone_e164, display_name, role, trust_score, onboarding_state, created_at, last_seen_at, disabled_at)
+VALUES ('user-diane-001', 'tenant-acme-001', 'diane@acme-firm.example', '+15551234501', 'Diane', 'office_manager', 95.0, 'active', '2026-01-15T00:00:00Z', '2026-03-14T08:00:00Z', NULL);
+
+INSERT INTO users (user_id, tenant_id, email, phone_e164, display_name, role, trust_score, onboarding_state, created_at, last_seen_at, disabled_at)
+VALUES ('user-marco-001', 'tenant-acme-001', 'marco@acme-firm.example', '+15551234502', 'Marco', 'office_manager', 92.0, 'active', '2026-01-20T00:00:00Z', '2026-03-13T14:00:00Z', NULL);
+
+INSERT INTO users (user_id, tenant_id, email, phone_e164, display_name, role, trust_score, onboarding_state, created_at, last_seen_at, disabled_at)
+VALUES ('user-priya-001', 'tenant-acme-001', 'priya@acme-firm.example', '+15551234503', 'Priya', 'office_manager', 88.0, 'active', '2026-02-01T00:00:00Z', '2026-03-14T07:45:00Z', NULL);
+
+INSERT INTO users (user_id, tenant_id, email, phone_e164, display_name, role, trust_score, onboarding_state, created_at, last_seen_at, disabled_at)
+VALUES ('user-sandra-001', 'tenant-acme-001', 'sandra@acme-firm.example', '+15551234500', 'Sandra', 'owner', 100.0, 'active', '2026-01-01T00:00:00Z', '2026-03-10T09:00:00Z', NULL);
+
+-- Demo staff member (Jonas as in-house log - field worker, no login account)
+INSERT INTO staff_members (staff_member_id, tenant_id, user_id, display_name, role, trust_score, shadow_mode_visit_limit, created_at, terminated_at)
+VALUES ('staff-jonas-001', 'tenant-acme-001', NULL, 'Jonas (CleanPro)', 'contractor', 85.0, NULL, '2026-01-15T00:00:00Z', NULL);
+
+-- Demo calendar connection (Google Calendar)
+INSERT INTO calendar_connections (connection_id, tenant_id, user_id, provider, oauth_refresh_token_encrypted, calendar_ids, sync_cursor, last_sync_at, last_sync_status, error_count_24h)
+VALUES ('conn-acme-001', 'tenant-acme-001', 'user-diane-001', 'google', 'REPLACE_ME_ENCRYPTED_TOKEN', '["primary","shared-ops@acme-firm.example"]', 'sync_token_abc123', '2026-03-14T07:55:00Z', 'ok', 0);
+
+-- Demo calendar events (March 9-14, 2026 cleaning schedule M/W/F)
+-- March 9 (Monday) - missed visit
+INSERT INTO calendar_events (calendar_event_id, tenant_id, connection_id, provider_event_id, title, description, starts_at, ends_at, is_all_day, recurrence_rule, organizer_email, is_cancelled, last_seen_at)
+VALUES ('cal-20260309-clean', 'tenant-acme-001', 'conn-acme-001', 'google_evt_20260309_001', 'CleanPro Weekly Cleaning', 'Recurring M/W/F office cleaning', '2026-03-09T08:00:00Z', '2026-03-09T09:00:00Z', FALSE, 'FREQ=WEEKLY;BYDAY=MO,WE,FR', 'diane@acme-firm.example', FALSE, '2026-03-09T07:55:00Z');
+
+-- March 11 (Wednesday) - completed on time
+INSERT INTO calendar_events (calendar_event_id, tenant_id, connection_id, provider_event_id, title, description, starts_at, ends_at, is_all_day, recurrence_rule, organizer_email, is_cancelled, last_seen_at)
+VALUES ('cal-20260311-clean', 'tenant-acme-001', 'conn-acme-001', 'google_evt_20260311_001', 'CleanPro Weekly Cleaning', 'Recurring M/W/F office cleaning', '2026-03-11T08:00:00Z', '2026-03-11T09:00:00Z', FALSE, 'FREQ=WEEKLY;BYDAY=MO,WE,FR', 'diane@acme-firm.example', FALSE, '2026-03-11T07:55:00Z');
+
+-- March 13 (Friday) - completed on time
+INSERT INTO calendar_events (calendar_event_id, tenant_id, connection_id, provider_event_id, title, description, starts_at, ends_at, is_all_day, recurrence_rule, organizer_email, is_cancelled, last_seen_at)
+VALUES ('cal-20260313-clean', 'tenant-acme-001', 'conn-acme-001', 'google_evt_20260313_001', 'CleanPro Weekly Cleaning', 'Recurring M/W/F office cleaning', '2026-03-13T08:00:00Z', '2026-03-13T09:00:00Z', FALSE, 'FREQ=WEEKLY;BYDAY=MO,WE,FR', 'diane@acme-firm.example', FALSE, '2026-03-13T07:55:00Z');
+
+-- March 14 (Saturday - today in demo) - in progress, started late
+INSERT INTO calendar_events (calendar_event_id, tenant_id, connection_id, provider_event_id, title, description, starts_at, ends_at, is_all_day, recurrence_rule, organizer_email, is_cancelled, last_seen_at)
+VALUES ('cal-20260314-clean', 'tenant-acme-001', 'conn-acme-001', 'google_evt_20260314_001', 'CleanPro Weekly Cleaning', 'Recurring M/W/F office cleaning', '2026-03-14T08:00:00Z', '2026-03-14T09:00:00Z', FALSE, 'FREQ=WEEKLY;BYDAY=MO,WE,FR', 'diane@acme-firm.example', FALSE, '2026-03-14T07:55:00Z');
+
+-- March 14 daily courier pickup
+INSERT INTO calendar_events (calendar_event_id, tenant_id, connection_id, provider_event_id, title, description, starts_at, ends_at, is_all_day, recurrence_rule, organizer_email, is_cancelled, last_seen_at)
+VALUES ('cal-20260314-courier', 'tenant-acme-001', 'conn-acme-001', 'google_evt_20260314_002', 'SwiftCourier Daily Pickup', 'Daily 4pm courier collection', '2026-03-14T16:00:00Z', '2026-03-14T16:15:00Z', FALSE, 'FREQ=DAILY;BYHOUR=16;BYMINUTE=0', 'diane@acme-firm.example', FALSE, '2026-03-14T07:55:00Z');
+
+-- March 10 HVAC quarterly service (completed)
+INSERT INTO calendar_events (calendar_event_id, tenant_id, connection_id, provider_event_id, title, description, starts_at, ends_at, is_all_day, recurrence_rule, organizer_email, is_cancelled, last_seen_at)
+VALUES ('cal-20260310-hvac', 'tenant-acme-001', 'conn-acme-001', 'google_evt_20260310_001', 'HVACPlus Quarterly Maintenance', 'Quarterly HVAC filter and system check', '2026-03-10T14:00:00Z', '2026-03-10T15:00:00Z', FALSE, 'FREQ=MONTHLY;INTERVAL=3', 'marco@acme-firm.example', FALSE, '2026-03-10T13:55:00Z');
+
+-- Demo vendors
+INSERT INTO vendors (vendor_id, tenant_id, display_name, service_type, contact_email, contact_phone, sla_window_minutes, shadow_mode, shadow_mode_visit_limit, score, score_band, created_at, archived_at)
+VALUES ('vendor-cleanpro-001', 'tenant-acme-001', 'CleanPro Services', 'cleaning', 'dispatch@cleanpro.example', '+15559876501', 15, FALSE, NULL, 78.5, 'warning', '2026-01-15T00:00:00Z', NULL);
+
+INSERT INTO vendors (vendor_id, tenant_id, display_name, service_type, contact_email, contact_phone, sla_window_minutes, shadow_mode, shadow_mode_visit_limit, score, score_band, created_at, archived_at)
+VALUES ('vendor-hvacplus-001', 'tenant-acme-001', 'HVACPlus', 'hvac', 'scheduling@hvacplus.example', '+15559876502', 30, FALSE, NULL, 95.0, 'ok', '2026-01-15T00:00:00Z', NULL);
+
+INSERT INTO vendors (vendor_id, tenant_id, display_name, service_type, contact_email, contact_phone, sla_window_minutes, shadow_mode, shadow_mode_visit_limit, score, score_band, created_at, archived_at)
+VALUES ('vendor-swift-001', 'tenant-acme-001', 'SwiftCourier', 'courier', 'ops@swiftcourier.example', '+15559876503', 5, FALSE, NULL, 92.0, 'ok', '2026-01-15T00:00:00Z', NULL);
+
+-- Demo vendor contacts (Jonas as counterparty for CleanPro)
+INSERT INTO vendor_contacts (vendor_contact_id, tenant_id, vendor_id, display_name, phone_e164, email, magic_link_enabled, default_recipient, created_at)
+VALUES ('vcontact-jonas-001', 'tenant-acme-001', 'vendor-cleanpro-001', 'Jonas (Field Worker)', '+15559876504', 'jonas.field@cleanpro.example', TRUE, TRUE, '2026-01-15T00:00:00Z');
+
+INSERT INTO vendor_contacts (vendor_contact_id, tenant_id, vendor_id, display_name, phone_e164, email, magic_link_enabled, default_recipient, created_at)
+VALUES ('vcontact-hvac-001', 'tenant-acme-001', 'vendor-hvacplus-001', 'HVACPlus Dispatch', '+15559876505', 'dispatch@hvacplus.example', TRUE, TRUE, '2026-01-15T00:00:00Z');
+
+-- Demo visit templates
+INSERT INTO visit_templates (template_id, tenant_id, vendor_id, calendar_event_id, scheduled_start_offset_minutes, sla_window_minutes, default_duration_minutes, requires_counterparty_signature, requires_photo, created_at)
+VALUES ('tmpl-cleanpro-001', 'tenant-acme-001', 'vendor-cleanpro-001', 'cal-20260309-clean', 0, 15, 60, TRUE, TRUE, '2026-01-15T00:00:00Z');
+
+INSERT INTO visit_templates (template_id, tenant_id, vendor_id, calendar_event_id, scheduled_start_offset_minutes, sla_window_minutes, default_duration_minutes, requires_counterparty_signature, requires_photo, created_at)
+VALUES ('tmpl-hvac-001', 'tenant-acme-001', 'vendor-hvacplus-001', 'cal-20260310-hvac', 0, 30, 60, TRUE, TRUE, '2026-01-15T00:00:00Z');
+
+INSERT INTO visit_templates (template_id, tenant_id, vendor_id, calendar_event_id, scheduled_start_offset_minutes, sla_window_minutes, default_duration_minutes, requires_counterparty_signature, requires_photo, created_at)
+VALUES ('tmpl-courier-001', 'tenant-acme-001', 'vendor-swift-001', 'cal-20260314-courier', 0, 5, 15, FALSE, FALSE, '2026-01-15T00:00:00Z');
+
+-- Demo visit instances
+-- March 9: missed (no start tap, auto-marked by system)
+INSERT INTO visit_instances (instance_id, tenant_id, template_id, vendor_id, staff_member_id, scheduled_start_at, scheduled_end_at, status, actual_start_at, actual_end_at, drift_seconds, signing_window_closes_at, late_tap_reason, created_at)
+VALUES ('visit-20260309-missed', 'tenant-acme-001', 'tmpl-cleanpro-001', 'vendor-cleanpro-001', NULL, '2026-03-09T08:00:00Z', '2026-03-09T09:00:00Z', 'missed', NULL, NULL, NULL, '2026-03-10T08:00:00Z', NULL, '2026-03-09T07:55:00Z');
+
+-- March 10: completed HVAC (on time)
+INSERT INTO visit_instances (instance_id, tenant_id, template_id, vendor_id, staff_member_id, scheduled_start_at, scheduled_end_at, status, actual_start_at, actual_end_at, drift_seconds, signing_window_closes_at, late_tap_reason, created_at)
+VALUES ('visit-20260310-hvac', 'tenant-acme-001', 'tmpl-hvac-001', 'vendor-hvacplus-001', 'staff-jonas-001', '2026-03-10T14:00:00Z', '2026-03-10T15:00:00Z', 'completed', '2026-03-10T14:05:00Z', '2026-03-10T14:55:00Z', 300, '2026-03-11T14:55:00Z', NULL, '2026-03-10T13:55:00Z');
+
+-- March 11: completed cleaning (on time, early actually)
+INSERT INTO visit_instances (instance_id, tenant_id, template_id, vendor_id, staff_member_id, scheduled_start_at, scheduled_end_at, status, actual_start_at, actual_end_at, drift_seconds, signing_window_closes_at, late_tap_reason, created_at)
+VALUES ('visit-20260311-clean', 'tenant-acme-001', 'tmpl-cleanpro-001', 'vendor-cleanpro-001', 'staff-jonas-001', '2026-03-11T08:00:00Z', '2026-03-11T09:00:00Z', 'completed', '2026-03-11T07:55:00Z', '2026-03-11T08:55:00Z', -300, '2026-03-12T08:55:00Z', NULL, '2026-03-11T07:55:00Z');
+
+-- March 13: completed cleaning (on time)
+INSERT INTO visit_instances (instance_id, tenant_id, template_id, vendor_id, staff_member_id, scheduled_start_at, scheduled_end_at, status, actual_start_at, actual_end_at, drift_seconds, signing_window_closes_at, late_tap_reason, created_at)
+VALUES ('visit-20260313-clean', 'tenant-acme-001', 'tmpl-cleanpro-001', 'vendor-cleanpro-001', 'staff-jonas-001', '2026-03-13T08:00:00Z', '2026-03-13T09:00:00Z', 'completed', '2026-03-13T08:07:00Z', '2026-03-13T08:55:00Z', 420, '2026-03-14T08:55:00Z', NULL, '2026-03-13T07:55:00Z');
+
+-- March 14: in_progress cleaning (started late at 8:07, scheduled 8:00)
+INSERT INTO visit_instances (instance_id, tenant_id, template_id, vendor_id, staff_member_id, scheduled_start_at, scheduled_end_at, status, actual_start_at, actual_end_at, drift_seconds, signing_window_closes_at, late_tap_reason, created_at)
+VALUES ('visit-20260314-clean', 'tenant-acme-001', 'tmpl-cleanpro-001', 'vendor-cleanpro-001', 'staff-jonas-001', '2026-03-14T08:00:00Z', '2026-03-14T09:00:00Z', 'in_progress', '2026-03-14T08:07:00Z', NULL, 420, '2026-03-15T08:07:00Z', 'vendor late', '2026-03-14T07:55:00Z');
+
+-- March 14: scheduled courier (not due yet)
+INSERT INTO visit_instances (instance_id, tenant_id, template_id, vendor_id, staff_member_id, scheduled_start_at, scheduled_end_at, status, actual_start_at, actual_end_at, drift_seconds, signing_window_closes_at, late_tap_reason, created_at)
+VALUES ('visit-20260314-courier', 'tenant-acme-001', 'tmpl-courier-001', 'vendor-swift-001', NULL, '2026-03-14T16:00:00Z', '2026-03-14T16:15:00Z', 'scheduled', NULL, NULL, NULL, '2026-03-15T16:15:00Z', NULL, '2026-03-14T07:55:00Z');
+
+-- Demo visit receipts (for completed visits)
+-- March 10 HVAC receipt (sealed)
+INSERT INTO visit_receipts (receipt_id, tenant_id, instance_id, office_signature_id, counterparty_signature_id, office_signed_at, counterparty_signed_at, sealed_at, office_note, counterparty_note, photo_object_key, status)
+VALUES ('receipt-20260310-hvac', 'tenant-acme-001', 'visit-20260310-hvac', 'sig-office-20260310', 'sig-cpty-20260310', '2026-03-10T14:55:00Z', '2026-03-10T14:56:00Z', '2026-03-10T14:56:00Z', 'System serviced, filters replaced', 'Confirmed completion', 'photos/hvac-20260310-1405.jpg', 'sealed');
+
+-- March 11 cleaning receipt (sealed)
+INSERT INTO visit_receipts (receipt_id, tenant_id, instance_id, office_signature_id, counterparty_signature_id, office_signed_at, counterparty_signed_at, sealed_at, office_note, counterparty_note, photo_object_key, status)
+VALUES ('receipt-20260311-clean', 'tenant-acme-001', 'visit-20260311-clean', 'sig-office-20260311', 'sig-cpty-20260311', '2026-03-11T08:55:00Z', '2026-03-11T08:56:00Z', '2026-03-11T08:56:00Z', 'Early arrival, great service', 'Confirmed early start', 'photos/clean-20260311-0755.jpg', 'sealed');
+
+-- March 13 cleaning receipt (sealed)
+INSERT INTO visit_receipts (receipt_id, tenant_id, instance_id, office_signature_id, counterparty_signature_id, office_signed_at, counterparty_signed_at, sealed_at, office_note, counterparty_note, photo_object_key, status)
+VALUES ('receipt-20260313-clean', 'tenant-acme-001', 'visit-20260313-clean', 'sig-office-20260313', 'sig-cpty-20260313', '2026-03-13T08:55:00Z', '2026-03-13T08:56:00Z', '2026-03-13T08:56:00Z', 'Slight delay but good work', 'Running late due to traffic', 'photos/clean-20260313-0807.jpg', 'sealed');
+
+-- March 14 in-progress: drafted receipt (awaiting completion)
+INSERT INTO visit_receipts (receipt_id, tenant_id, instance_id, office_signature_id, counterparty_signature_id, office_signed_at, counterparty_signed_at, sealed_at, office_note, counterparty_note, photo_object_key, status)
+VALUES ('receipt-20260314-draft', 'tenant-acme-001', 'visit-20260314-clean', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'drafted');
+
+-- Demo signatures (simplified for seed)
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-office-20260310', 'tenant-acme-001', 'user-marco-001', 'office', NULL, 'sha256_payload_hvac_20260310', 'hmac_signature_b64_001', 'a1b2c3d4', '2026-03-10T14:55:00Z', 'hash_10_0_0_1', 'hash_mozilla', NULL);
+
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-cpty-20260310', 'tenant-acme-001', NULL, 'counterparty', '+15559876505', 'sha256_payload_hvac_20260310', 'hmac_signature_b64_002', 'a1b2c3d4', '2026-03-10T14:56:00Z', 'hash_field_ip', 'hash_mobile', 'token-hvac-20260310');
+
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-office-20260311', 'tenant-acme-001', 'user-diane-001', 'office', NULL, 'sha256_payload_clean_20260311', 'hmac_signature_b64_003', 'a1b2c3d4', '2026-03-11T08:55:00Z', 'hash_10_0_0_2', 'hash_mozilla', NULL);
+
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-cpty-20260311', 'tenant-acme-001', NULL, 'counterparty', '+15559876504', 'sha256_payload_clean_20260311', 'hmac_signature_b64_004', 'a1b2c3d4', '2026-03-11T08:56:00Z', 'hash_field_ip', 'hash_mobile', 'token-clean-20260311');
+
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-office-20260313', 'tenant-acme-001', 'user-diane-001', 'office', NULL, 'sha256_payload_clean_20260313', 'hmac_signature_b64_005', 'a1b2c3d4', '2026-03-13T08:55:00Z', 'hash_10_0_0_3', 'hash_mozilla', NULL);
+
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-cpty-20260313', 'tenant-acme-001', NULL, 'counterparty', '+15559876504', 'sha256_payload_clean_20260313', 'hmac_signature_b64_006', 'a1b2c3d4', '2026-03-13T08:56:00Z', 'hash_field_ip', 'hash_mobile', 'token-clean-20260313');
+
+-- Demo manual overrides
+-- March 9: system auto-marked missed
+INSERT INTO manual_overrides (override_id, tenant_id, instance_id, actor_user_id, override_type, reason, payload_before_hash, payload_after_hash, signature_id, created_at, approved_by_user_id, approved_at)
+VALUES ('ovr-missed-20260309', 'tenant-acme-001', 'visit-20260309-missed', NULL, 'mark_missed', 'No start tap received within SLA window + 24h grace', 'hash_scheduled', 'hash_missed', 'sig-system-20260309', '2026-03-10T08:00:00Z', NULL, NULL);
+
+-- March 14: late start override (Diane tapped late, reason recorded)
+INSERT INTO manual_overrides (override_id, tenant_id, instance_id, actor_user_id, override_type, reason, payload_before_hash, payload_after_hash, signature_id, created_at, approved_by_user_id, approved_at)
+VALUES ('ovr-late-20260314', 'tenant-acme-001', 'visit-20260314-clean', 'user-diane-001', 'start_late', 'Vendor reported running 10 minutes late via text', 'hash_due', 'hash_in_progress', 'sig-office-late-20260314', '2026-03-14T08:07:00Z', NULL, NULL);
+
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-office-late-20260314', 'tenant-acme-001', 'user-diane-001', 'office', NULL, 'hash_start_late_20260314', 'hmac_signature_b64_007', 'a1b2c3d4', '2026-03-14T08:07:00Z', 'hash_10_0_0_4', 'hash_mozilla', NULL);
+
+INSERT INTO signatures (signature_id, tenant_id, signer_user_id, signer_role, signer_phone_e164, canonical_payload_hash, hmac_signature, signing_key_fingerprint, signed_at, ip_hash, user_agent_hash, counterparty_token_id)
+VALUES ('sig-system-20260309', 'tenant-acme-001', NULL, 'system', NULL, 'hash_auto_missed_20260309', 'hmac_signature_b64_system', 'system_key_001', '2026-03-10T08:00:00Z', 'system', 'system', NULL);
+
+-- Demo counterparty tokens
+INSERT INTO counterparty_tokens (token_id, tenant_id, instance_id, vendor_contact_id, token_hash, channel, issued_at, expires_at, consumed_at, ip_hash_at_consume)
+VALUES ('token-hvac-20260310', 'tenant-acme-001', 'visit-20260310-hvac', 'vcontact-hvac-001', 'sha256_magic_token_hvac_20260310', 'sms', '2026-03-10T14:00:00Z', '2026-03-11T14:00:00Z', '2026-03-10T14:56:00Z', 'hash_field_ip');
+
+INSERT INTO counterparty_tokens (token_id, tenant_id, instance_id, vendor_contact_id, token_hash, channel, issued_at, expires_at, consumed_at, ip_hash_at_consume)
+VALUES ('token-clean-20260311', 'tenant-acme-001', 'visit-20260311-clean', 'vcontact-jonas-001', 'sha256_magic_token_clean_20260311', 'sms', '2026-03-11T07:55:00Z', '2026-03-12T07:55:00Z', '2026-03-11T08:56:00Z', 'hash_field_ip');
+
+INSERT INTO counterparty_tokens (token_id, tenant_id, instance_id, vendor_contact_id, token_hash, channel, issued_at, expires_at, consumed_at, ip_hash_at_consume)
+VALUES ('token-clean-20260313', 'tenant-acme-001', 'visit-20260313-clean', 'vcontact-jonas-001', 'sha256_magic_token_clean_20260313', 'sms', '2026-03-13T07:55:00Z', '2026-03-14T07:55:00Z', '2026-03-13T08:56:00Z', 'hash_field_ip');
+
+-- Demo ledger entries (append-only chain)
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (1, 'tenant-acme-001', 'visit_created', 'VisitInstance', 'visit-20260309-missed', '{"scheduled_start":"2026-03-09T08:00:00Z"}', 'hash_payload_1', 'genesis_hash_acme_001', 'hash_entry_1', 'user-diane-001', 'office_manager', '2026-03-09T07:55:00Z', NULL);
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (2, 'tenant-acme-001', 'visit_created', 'VisitInstance', 'visit-20260310-hvac', '{"scheduled_start":"2026-03-10T14:00:00Z"}', 'hash_payload_2', 'hash_entry_1', 'hash_entry_2', 'user-marco-001', 'office_manager', '2026-03-10T13:55:00Z', NULL);
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (3, 'tenant-acme-001', 'visit_started', 'VisitInstance', 'visit-20260310-hvac', '{"actual_start":"2026-03-10T14:05:00Z","drift":300}', 'hash_payload_3', 'hash_entry_2', 'hash_entry_3', 'user-marco-001', 'office_manager', '2026-03-10T14:05:00Z', 'sig-office-20260310');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (4, 'tenant-acme-001', 'receipt_sealed', 'VisitReceipt', 'receipt-20260310-hvac', '{"office_signed":true,"counterparty_signed":true}', 'hash_payload_4', 'hash_entry_3', 'hash_entry_4', 'user-marco-001', 'office_manager', '2026-03-10T14:56:00Z', 'sig-cpty-20260310');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (5, 'tenant-acme-001', 'visit_created', 'VisitInstance', 'visit-20260311-clean', '{"scheduled_start":"2026-03-11T08:00:00Z"}', 'hash_payload_5', 'hash_entry_4', 'hash_entry_5', 'user-diane-001', 'office_manager', '2026-03-11T07:55:00Z', NULL);
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (6, 'tenant-acme-001', 'visit_started', 'VisitInstance', 'visit-20260311-clean', '{"actual_start":"2026-03-11T07:55:00Z","drift":-300}', 'hash_payload_6', 'hash_entry_5', 'hash_entry_6', 'user-diane-001', 'office_manager', '2026-03-11T07:55:00Z', 'sig-office-20260311');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (7, 'tenant-acme-001', 'receipt_sealed', 'VisitReceipt', 'receipt-20260311-clean', '{"office_signed":true,"counterparty_signed":true}', 'hash_payload_7', 'hash_entry_6', 'hash_entry_7', 'user-diane-001', 'office_manager', '2026-03-11T08:56:00Z', 'sig-cpty-20260311');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (8, 'tenant-acme-001', 'visit_created', 'VisitInstance', 'visit-20260313-clean', '{"scheduled_start":"2026-03-13T08:00:00Z"}', 'hash_payload_8', 'hash_entry_7', 'hash_entry_8', 'user-diane-001', 'office_manager', '2026-03-13T07:55:00Z', NULL);
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (9, 'tenant-acme-001', 'visit_started', 'VisitInstance', 'visit-20260313-clean', '{"actual_start":"2026-03-13T08:07:00Z","drift":420}', 'hash_payload_9', 'hash_entry_8', 'hash_entry_9', 'user-diane-001', 'office_manager', '2026-03-13T08:07:00Z', 'sig-office-20260313');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (10, 'tenant-acme-001', 'receipt_sealed', 'VisitReceipt', 'receipt-20260313-clean', '{"office_signed":true,"counterparty_signed":true}', 'hash_payload_10', 'hash_entry_9', 'hash_entry_10', 'user-diane-001', 'office_manager', '2026-03-13T08:56:00Z', 'sig-cpty-20260313');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (11, 'tenant-acme-001', 'visit_created', 'VisitInstance', 'visit-20260314-clean', '{"scheduled_start":"2026-03-14T08:00:00Z"}', 'hash_payload_11', 'hash_entry_10', 'hash_entry_11', 'user-diane-001', 'office_manager', '2026-03-14T07:55:00Z', NULL);
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (12, 'tenant-acme-001', 'override', 'VisitInstance', 'visit-20260314-clean', '{"override_type":"start_late","reason":"vendor_late"}', 'hash_payload_12', 'hash_entry_11', 'hash_entry_12', 'user-diane-001', 'office_manager', '2026-03-14T08:07:00Z', 'sig-office-late-20260314');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (13, 'tenant-acme-001', 'visit_started', 'VisitInstance', 'visit-20260314-clean', '{"actual_start":"2026-03-14T08:07:00Z","drift":420}', 'hash_payload_13', 'hash_entry_12', 'hash_entry_13', 'user-diane-001', 'office_manager', '2026-03-14T08:07:00Z', 'sig-office-late-20260314');
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (14, 'tenant-acme-001', 'visit_created', 'VisitInstance', 'visit-20260314-courier', '{"scheduled_start":"2026-03-14T16:00:00Z"}', 'hash_payload_14', 'hash_entry_13', 'hash_entry_14', 'user-diane-001', 'office_manager', '2026-03-14T07:55:00Z', NULL);
+
+INSERT INTO ledger_entries (entry_id, tenant_id, entry_type, entity_type, entity_id, payload_canonical_json, payload_hash, prev_hash, entry_hash, actor_user_id, actor_role, created_at, signature_id)
+VALUES (15, 'tenant-acme-001', 'override', 'VisitInstance', 'visit-20260309-missed', '{"override_type":"mark_missed","auto":true}', 'hash_payload_15', 'hash_entry_14', 'hash_entry_15', NULL, 'system', '2026-03-10T08:00:00Z', 'sig-system-20260309');
+
+-- Update tenant ledger head
+UPDATE tenants SET ledger_head_hash = 'hash_entry_15' WHERE tenant_id = 'tenant-acme-001';
+
+-- Demo vendor scores (30-day window, current)
+INSERT INTO vendor_scores (score_id, tenant_id, vendor_id, window_days, on_time_starts, late_starts, missed_visits, disputed_visits, score_value, score_band, computed_at, previous_score_id)
+VALUES ('vs-cleanpro-30d-001', 'tenant-acme-001', 'vendor-cleanpro-001', 30, 2, 1, 1, 0, 78.5, 'warning', '2026-03-14T06:00:00Z', NULL);
+
+INSERT INTO vendor_scores (score_id, tenant_id, vendor_id, window_days, on_time_starts, late_starts, missed_visits, disputed_visits, score_value, score_band, computed_at, previous_score_id)
+VALUES ('vs-hvacplus-30d-001', 'tenant-acme-001', 'vendor-hvacplus-001', 30, 1, 0, 0, 0, 95.0, 'ok', '2026-03-14T06:00:00Z', NULL);
+
+INSERT INTO vendor_scores (score_id, tenant_id, vendor_id, window_days, on_time_starts, late_starts, missed_visits, disputed_visits, score_value, score_band, computed_at, previous_score_id)
+VALUES ('vs-swift-30d-001', 'tenant-acme-001', 'vendor-swift-001', 30, 6, 0, 0, 0, 92.0, 'ok', '2026-03-14T06:00:00Z', NULL);
+
+-- Demo notifications
+INSERT INTO notifications (notification_id, tenant_id, recipient_user_id, recipient_phone_e164, channel, template, instance_id, scheduled_for, sent_at, delivery_status, failure_reason)
+VALUES ('notif-001', 'tenant-acme-001', 'user-diane-001', NULL, 'push', 'visit_started_late', 'visit-20260314-clean', '2026-03-14T08:07:30Z', '2026-03-14T08:07:31Z', 'delivered', NULL);
+
+INSERT INTO notifications (notification_id, tenant_id, recipient_user_id, recipient_phone_e164, channel, template, instance_id, scheduled_for, sent_at, delivery_status, failure_reason)
+VALUES ('notif-002', 'tenant-acme-001', 'user-sandra-001', NULL, 'email', 'weekly_digest', NULL, '2026-03-10T09:00:00Z', '2026-03-10T09:00:01Z', 'delivered', NULL);
+
+INSERT INTO notifications (notification_id, tenant_id, recipient_user_id, recipient_phone_e164, channel, template, instance_id, scheduled_for, sent_at, delivery_status, failure_reason)
+VALUES ('notif-003', 'tenant-acme-001', 'user-diane-001', NULL, 'push', 'visit_reminder', 'visit-20260314-courier', '2026-03-14T15:55:00Z', NULL, 'queued', NULL);

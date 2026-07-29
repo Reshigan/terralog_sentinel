@@ -1,0 +1,1030 @@
+/* ==========================================================================
+   Desklog — The Ledger Board
+   WCAG AAA compliant. High-contrast, dense, monospaced aesthetic.
+   ========================================================================== */
+
+/* ---- Design Tokens ------------------------------------------------------ */
+
+:root {
+  /* Scale: 4px grid base */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'Space Grotesk', monospace;
+
+  --text-xs:   0.6875rem; /* 11px — meta, labels */
+  --text-sm:   0.8125rem; /* 13px — body default */
+  --text-base: 0.8125rem; /* 13px — alias */
+  --text-md:   1rem;      /* 16px — emphasized body */
+  --text-lg:   1.5rem;    /* 24px — slot time headings */
+  --text-xl:   2rem;     /* 32px — page title */
+
+  --lh-tight:  1.2;
+  --lh-body:   1.5;
+  --lh-relaxed: 1.65;
+
+  --tracking-display: -0.04em;
+  --tracking-body:    0;
+  --tracking-mono:    -0.02em;
+
+  /* Corner radius — one scale for the whole page */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+
+  /* Surface palette — warm neutral, single accent (indigo-blue) */
+  --surface-base:     #FAFAF8;
+  --surface-elevated: #FFFFFF;
+  --surface-sunken:   #F0F0ED;
+
+  --border-subtle:  #D4D4CF;
+  --border-default: #A8A8A0;
+  --border-strong:  #6B6B64;
+
+  /* Text on surface */
+  --text-primary:   #1A1A18;
+  --text-secondary: #4A4A44;
+  --text-tertiary:  #7A7A72;
+  --text-on-accent: #FFFFFF;
+  --text-inverse:   #1A1A18;
+
+  /* Accent — the ONLY color accent on the whole page */
+  --accent:        #2B4ACB;
+  --accent-hover:  #1E3AAF;
+  --accent-subtle: #E8EDF9;
+
+  /* Drift states — conveyed by border-style + icon + text, never hue alone.
+     These tints exist as supplementary signals, not the sole indicator. */
+  --drift-ontime-border:  #2B4ACB; /* solid — on time */
+  --drift-ontime-bg:     #E8EDF9;
+  --drift-ontime-text:   #1E3AAF;
+
+  --drift-inprogress-border: #6B6B64; /* solid — neutral */
+  --drift-inprogress-bg:     #F0F0ED;
+  --drift-inprogress-text:   #4A4A44;
+
+  --drift-late-border:  #B85C00; /* dashed — late start */
+  --drift-late-bg:     #FFF5E6;
+  --drift-late-text:   #8A4400;
+
+  --drift-missed-border: #A83232; /* dotted — missed */
+  --drift-missed-bg:     #FCE8E8;
+  --drift-missed-text:   #7A2020;
+
+  --drift-completed-border: #1A6B3A; /* solid + check — completed & signed */
+  --drift-completed-bg:     #E8F5EC;
+  --drift-completed-text:   #145228;
+
+  --drift-early-border: #5A5ACB; /* dashed — early start */
+  --drift-early-bg:     #EEEEFA;
+  --drift-early-text:   #3A3A9A;
+
+  /* Focus ring */
+  --focus-ring: 2px solid var(--accent);
+  --focus-ring-offset: 2px;
+
+  /* Shadows — tinted to background hue, never pure black */
+  --shadow-sm: 0 1px 2px rgba(26, 26, 24, 0.06);
+  --shadow-md: 0 2px 8px rgba(26, 26, 24, 0.08);
+  --shadow-lg: 0 4px 16px rgba(26, 26, 24, 0.1);
+
+  /* Transition defaults */
+  --transition-fast: 120ms ease-out;
+  --transition-base: 200ms ease-out;
+  --transition-slow: 350ms ease-out;
+
+  /* Target size minimum for interactive controls */
+  --target-min: 44px;
+}
+
+/* ---- Reset & Base ------------------------------------------------------ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 100%; /* 16px baseline */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
+  color: var(--text-primary);
+  background-color: var(--surface-base);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-y: scroll;
+}
+
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Typography -------------------------------------------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-6);
+}
+
+h2 {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-4);
+}
+
+h3 {
+  font-size: var(--text-md);
+  margin-bottom: var(--space-3);
+}
+
+p {
+  max-width: 70ch;
+  margin-bottom: var(--space-4);
+}
+
+small, .text-sm {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-mono);
+}
+
+/* Monospaced numbers — tabular lining for times and data */
+.mono, time, .tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-mono);
+}
+
+/* ---- Links & Interactive ------------------------------------------------ */
+
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+a:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+button:hover,
+.btn:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+}
+
+button:active,
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-sm);
+}
+
+button:focus-visible,
+.btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+button:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary button — the accent is the ONLY strong color */
+.btn-primary {
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+/* ---- Forms -------------------------------------------------------------- */
+
+label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+input,
+select,
+textarea {
+  display: block;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--lh-body);
+  color: var(--text-primary);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+input:invalid,
+textarea:invalid {
+  border-color: var(--drift-missed-border);
+}
+
+.field-error {
+  color: var(--drift-missed-text);
+  font-size: var(--text-xs);
+  margin-top: var(--space-1);
+}
+
+/* ---- Layout: The Ledger Board ------------------------------------------- */
+
+/* Full-viewport vertical timeline. No sidebars, no tabs.
+   The day is a single column of time slots; current time is a razor-thin
+   accent line. Typography: Space Grotesk 700 for slot times, DM Sans 400
+   for notes. 13px body (dense but 4.5:1 on elevated), 24px time headings. */
+
+.board-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  max-width: 72ch;
+  margin: 0 auto;
+  padding: var(--space-4);
+  gap: var(--space-4);
+}
+
+.board-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.board-header__title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+}
+
+.board-header__date {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  letter-spacing: var(--tracking-mono);
+}
+
+/* ---- Now Board Timeline ------------------------------------------------ */
+
+.now-board {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-16);
+}
+
+/* Current time indicator — razor-thin accent line */
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.now-line::before {
+  content: attr(data-time);
+  position: absolute;
+  left: 0;
+  top: -18px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: var(--tracking-mono);
+}
+
+/* ---- Visit Slot (role=article) ------------------------------------------ */
+
+.visit-slot {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5ch 1fr;
+  grid-template-rows: auto auto;
+  gap: 0 var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  min-height: var(--target-min);
+  border-width: 2px;
+  border-style: solid;
+  border-radius: var(--radius-lg);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-base);
+  cursor: pointer;
+}
+
+.visit-slot:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.visit-slot:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Drift states: border-style is the PRIMARY signal.
+   Color is supplementary; border-style changes per state. */
+
+/* On-time: solid border */
+.visit-slot--on_time {
+  border-color: var(--drift-ontime-border);
+  border-style: solid;
+  background: var(--drift-ontime-bg);
+}
+
+.visit-slot--on_time .visit-slot__time {
+  color: var(--drift-ontime-text);
+}
+
+.visit-slot--on_time .visit-slot__drift-label {
+  color: var(--drift-ontime-text);
+}
+
+/* In-progress: solid neutral border */
+.visit-slot--in_progress {
+  border-color: var(--drift-inprogress-border);
+  border-style: solid;
+  background: var(--drift-inprogress-bg);
+}
+
+.visit-slot--in_progress .visit-slot__time {
+  color: var(--drift-inprogress-text);
+}
+
+/* Late start: DASHED border + amber text label */
+.visit-slot--late_start {
+  border-color: var(--drift-late-border);
+  border-style: dashed;
+  background: var(--drift-late-bg);
+}
+
+.visit-slot--late_start .visit-slot__time {
+  color: var(--drift-late-text);
+}
+
+.visit-slot--late_start .visit-slot__drift-label {
+  color: var(--drift-late-text);
+}
+
+/* Missed: DOTTED border + danger text */
+.visit-slot--missed {
+  border-color: var(--drift-missed-border);
+  border-style: dotted;
+  background: var(--drift-missed-bg);
+}
+
+.visit-slot--missed .visit-slot__time {
+  color: var(--drift-missed-text);
+}
+
+.visit-slot--missed .visit-slot__drift-label {
+  color: var(--drift-missed-text);
+}
+
+/* Completed & signed: solid green border + check icon */
+.visit-slot--completed {
+  border-color: var(--drift-completed-border);
+  border-style: solid;
+  background: var(--drift-completed-bg);
+}
+
+.visit-slot--completed .visit-slot__time {
+  color: var(--drift-completed-text);
+}
+
+.visit-slot--completed .visit-slot__drift-label {
+  color: var(--drift-completed-text);
+}
+
+/* Early start: dashed border */
+.visit-slot--early_start {
+  border-color: var(--drift-early-border);
+  border-style: dashed;
+  background: var(--drift-early-bg);
+}
+
+.visit-slot--early_start .visit-slot__time {
+  color: var(--drift-early-text);
+}
+
+/* Scheduled (future): thin accent border, neutral fill */
+.visit-slot--scheduled {
+  border-color: var(--border-subtle);
+  border-style: solid;
+  background: var(--surface-elevated);
+}
+
+.visit-slot--due {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--surface-elevated);
+}
+
+.visit-slot--due .visit-slot__time {
+  color: var(--accent);
+}
+
+/* ---- Slot Internal Layout ---------------------------------------------- */
+
+.visit-slot__time {
+  grid-row: 1 / 3;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: 1;
+  align-self: center;
+  color: var(--text-primary);
+}
+
+.visit-slot__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.visit-slot__vendor {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  color: var(--text-primary);
+}
+
+.visit-slot__service {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-transform: capitalize;
+}
+
+.visit-slot__drift {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.visit-slot__drift-label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.visit-slot__drift-delta {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+/* Check icon for completed slots — inline SVG via background */
+.visit-slot__check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* ---- Slot Actions (Start Visit, Confirm, etc.) -------------------------- */
+
+.visit-slot__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.visit-slot__action {
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.visit-slot__action--start {
+  color: var(--text-on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.visit-slot__action--start:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.visit-slot__action--confirm {
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+}
+
+.visit-slot__action--confirm:hover {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* ---- Late-tap reason overlay -------------------------------------------- */
+
+.reason-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 24, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.reason-overlay__panel {
+  width: min(100%, 480px);
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: var(--space-6);
+  background: var(--surface-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.reason-overlay__title {
+  font-size: var(--text-md);
+  margin-bottom: var(--space-4);
+}
+
+.reason-overlay__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.reason-overlay__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--target-min);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.reason-overlay__option:hover {
+  border-color: var(--accent);
+}
+
+.reason-overlay__option:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.reason-overlay__other {
+  min-height: 120px;
+  margin-bottom: var(--space-4);
+}
+
+/* ---- Skeleton Loading -------------------------------------------------- */
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+  min-height: var(--target-min);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+  .skeleton {
+    background: var(--surface-sunken);
+  }
+}
+
+.skeleton--slot {
+  height: 80px;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton--line {
+  height: 16px;
+  margin-bottom: var(--space-2);
+  width: 60%;
+}
+
+.skeleton--line-short {
+  height: 16px;
+  margin-bottom: var(--space-2);
+  width: 40%;
+}
+
+/* ---- Empty State ------------------------------------------------------- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16) var(--space-4);
+  text-align: center;
+}
+
+.empty-state__icon {
+  width: 48px;
+  height: 48px;
+  color: var(--border-default);
+}
+
+.empty-state__heading {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state__body {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 40ch;
+}
+
+/* ---- Error State ------------------------------------------------------- */
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16) var(--space-4);
+  text-align: center;
+}
+
+.error-state__heading {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--drift-missed-text);
+}
+
+.error-state__body {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.error-state__retry {
+  min-width: 160px;
+}
+
+/* ---- Offline Banner ---------------------------------------------------- */
+
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--drift-late-bg);
+  border-bottom: 2px solid var(--drift-late-border);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--drift-late-text);
+  text-align: center;
+}
+
+/* ---- Board Footer (sync status) ------------------------------------------ */
+
+.board-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.board-footer__sync-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--drift-completed-border);
+}
+
+.sync-dot--stale {
+  background: var(--drift-late-border);
+}
+
+.sync-dot--failed {
+  background: var(--drift-missed-border);
+}
+
+/* ---- Custom Icon Set (24x24 grid, 2px stroke, round cap/join) ----------- */
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.icon svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- Utility Classes --------------------------------------------------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.visually-hidden {
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* Screen-reader-only announce region for live updates */
+.aria-live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+/* ---- Toast / Notification ----------------------------------------------- */
+
+.toast {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-3) var(--space-6);
+  background: var(--text-primary);
+  color: var(--surface-elevated);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+
+.toast--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.toast--error {
+  background: var(--drift-missed-border);
+}
+
+/* ---- Pulse animation for late-start slots (removed with reduced motion) */
+
+@keyframes pulse-border {
+  0%, 100% { border-color: var(--drift-late-border); }
+  50%      { border-color: transparent; }
+}
+
+.visit-slot--late_start.pulse {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visit-slot--late_start.pulse {
+    animation: none;
+    /* Border style already dashed — sufficient visual signal */
+  }
+}
+
+/* ---- Conflict Resolution Card ------------------------------------------ */
+
+.conflict-card {
+  padding: var(--space-4);
+  border: 2px solid var(--drift-late-border);
+  border-radius: var(--radius-lg);
+  background: var(--drift-late-bg);
+}
+
+.conflict-card__heading {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--drift-late-text);
+  margin-bottom: var(--space-2);
+}
+
+.conflict-card__body {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.conflict-card__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ---- Responsive: compact view for smaller screens ---------------------- */
+
+@media (max-width: 640px) {
+  .board-shell {
+    padding: var(--space-3);
+  }
+
+  .visit-slot {
+    grid-template-columns: 4ch 1fr;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .visit-slot__time {
+    font-size: var(--text-md);
+  }
+
+  .visit-slot__vendor {
+    font-size: var(--text-sm);
+  }
+
+  .board-header__title {
+    font-size: var(--text-md);
+  }
+}
+
+/* ---- Print: simplify for paper ----------------------------------------- */
+
+@media print {
+  .now-line,
+  .visit-slot__actions,
+  .offline-banner,
+  .toast {
+    display: none !important;
+  }
+
+  .visit-slot {
+    break-inside: avoid;
+    box-shadow: none;
+    border-width: 1px;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+}

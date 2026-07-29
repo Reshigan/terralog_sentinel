@@ -1,7 +1,8 @@
 -- GENERATED schema.
+-- Legacy tables matching types.ts contract
+
 CREATE TABLE IF NOT EXISTS readings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   photo TEXT,
   latitude REAL,
   longitude REAL,
@@ -15,20 +16,15 @@ CREATE TABLE IF NOT EXISTS readings (
   device_id INTEGER,
   equipment_id INTEGER,
   calibration_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (site_id, tenant) REFERENCES sites(id, tenant),
-  FOREIGN KEY (device_id, tenant) REFERENCES devices(id, tenant),
-  FOREIGN KEY (equipment_id, tenant) REFERENCES equipments(id, tenant),
-  FOREIGN KEY (calibration_id, tenant) REFERENCES calibration_logs(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS readings_tenant_site_id_idx ON readings (tenant, site_id);
-CREATE INDEX IF NOT EXISTS readings_tenant_device_id_idx ON readings (tenant, device_id);
-CREATE INDEX IF NOT EXISTS readings_tenant_equipment_id_idx ON readings (tenant, equipment_id);
-CREATE INDEX IF NOT EXISTS readings_tenant_calibration_id_idx ON readings (tenant, calibration_id);
+CREATE INDEX IF NOT EXISTS readings_site_id_idx ON readings (site_id);
+CREATE INDEX IF NOT EXISTS readings_device_id_idx ON readings (device_id);
+CREATE INDEX IF NOT EXISTS readings_equipment_id_idx ON readings (equipment_id);
+CREATE INDEX IF NOT EXISTS readings_calibration_id_idx ON readings (calibration_id);
 
 CREATE TABLE IF NOT EXISTS sites (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   name TEXT,
   latitude REAL,
   longitude REAL,
@@ -39,31 +35,26 @@ CREATE TABLE IF NOT EXISTS sites (
   technician_email TEXT,
   status TEXT,
   zone_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (zone_id, tenant) REFERENCES connectivity_zones(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS sites_tenant_zone_id_idx ON sites (tenant, zone_id);
-CREATE INDEX IF NOT EXISTS sites_tenant_status_idx ON sites (tenant, status);
+CREATE INDEX IF NOT EXISTS sites_zone_id_idx ON sites (zone_id);
+CREATE INDEX IF NOT EXISTS sites_status_idx ON sites (status);
 
 CREATE TABLE IF NOT EXISTS sync_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   reading_id INTEGER,
   attempted_at TEXT,
   status TEXT,
   response_code INTEGER,
   error_message TEXT,
   sync_policy_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (reading_id, tenant) REFERENCES readings(id, tenant),
-  FOREIGN KEY (sync_policy_id, tenant) REFERENCES sync_policys(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS sync_logs_tenant_reading_id_idx ON sync_logs (tenant, reading_id);
-CREATE INDEX IF NOT EXISTS sync_logs_tenant_sync_policy_id_idx ON sync_logs (tenant, sync_policy_id);
+CREATE INDEX IF NOT EXISTS sync_logs_reading_id_idx ON sync_logs (reading_id);
+CREATE INDEX IF NOT EXISTS sync_logs_sync_policy_id_idx ON sync_logs (sync_policy_id);
 
 CREATE TABLE IF NOT EXISTS encryption_keys (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   derived_key TEXT,
   salt TEXT,
   iterations INTEGER,
@@ -71,14 +62,12 @@ CREATE TABLE IF NOT EXISTS encryption_keys (
   created_at TEXT,
   is_active INTEGER,
   device_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (device_id, tenant) REFERENCES devices(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS encryption_keys_tenant_device_id_idx ON encryption_keys (tenant, device_id);
+CREATE INDEX IF NOT EXISTS encryption_keys_device_id_idx ON encryption_keys (device_id);
 
 CREATE TABLE IF NOT EXISTS devices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   user_agent TEXT,
   screen_width INTEGER,
   screen_height INTEGER,
@@ -87,13 +76,12 @@ CREATE TABLE IF NOT EXISTS devices (
   technician_email TEXT,
   status TEXT,
   battery_level INTEGER,
-  UNIQUE (id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS devices_tenant_status_idx ON devices (tenant, status);
+CREATE INDEX IF NOT EXISTS devices_status_idx ON devices (status);
 
 CREATE TABLE IF NOT EXISTS outliers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   reading_id INTEGER,
   detected_at TEXT,
   z_score REAL,
@@ -102,44 +90,37 @@ CREATE TABLE IF NOT EXISTS outliers (
   resolved_by TEXT,
   site_id INTEGER,
   notification_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (reading_id, tenant) REFERENCES readings(id, tenant),
-  FOREIGN KEY (site_id, tenant) REFERENCES sites(id, tenant),
-  FOREIGN KEY (notification_id, tenant) REFERENCES notifications(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS outliers_tenant_reading_id_idx ON outliers (tenant, reading_id);
-CREATE INDEX IF NOT EXISTS outliers_tenant_site_id_idx ON outliers (tenant, site_id);
-CREATE INDEX IF NOT EXISTS outliers_tenant_notification_id_idx ON outliers (tenant, notification_id);
+CREATE INDEX IF NOT EXISTS outliers_reading_id_idx ON outliers (reading_id);
+CREATE INDEX IF NOT EXISTS outliers_site_id_idx ON outliers (site_id);
+CREATE INDEX IF NOT EXISTS outliers_notification_id_idx ON outliers (notification_id);
 
 CREATE TABLE IF NOT EXISTS sync_thresholds (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   max_attempts INTEGER,
   action TEXT,
   is_active INTEGER,
   created_at TEXT,
   updated_at TEXT,
-  UNIQUE (id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS sync_thresholds_tenant_action_idx ON sync_thresholds (tenant, action);
+CREATE INDEX IF NOT EXISTS sync_thresholds_action_idx ON sync_thresholds (action);
 
 CREATE TABLE IF NOT EXISTS passphrases (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   hash TEXT,
   salt TEXT,
   is_set INTEGER,
   set_at TEXT,
   device_id INTEGER,
   failed_attempts INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (device_id, tenant) REFERENCES devices(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS passphrases_tenant_device_id_idx ON passphrases (tenant, device_id);
+CREATE INDEX IF NOT EXISTS passphrases_device_id_idx ON passphrases (device_id);
 
 CREATE TABLE IF NOT EXISTS daily_aggregates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   date TEXT,
   total_readings INTEGER,
   synced_readings INTEGER,
@@ -147,29 +128,25 @@ CREATE TABLE IF NOT EXISTS daily_aggregates (
   avg_numeric_value REAL,
   site_id INTEGER,
   zone_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (site_id, tenant) REFERENCES sites(id, tenant),
-  FOREIGN KEY (zone_id, tenant) REFERENCES connectivity_zones(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS daily_aggregates_tenant_site_id_idx ON daily_aggregates (tenant, site_id);
-CREATE INDEX IF NOT EXISTS daily_aggregates_tenant_zone_id_idx ON daily_aggregates (tenant, zone_id);
+CREATE INDEX IF NOT EXISTS daily_aggregates_site_id_idx ON daily_aggregates (site_id);
+CREATE INDEX IF NOT EXISTS daily_aggregates_zone_id_idx ON daily_aggregates (zone_id);
 
 CREATE TABLE IF NOT EXISTS connectivity_zones (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   name TEXT,
   polygon_geojson TEXT,
   sync_success_rate REAL,
   last_updated TEXT,
   technician_email TEXT,
   status TEXT,
-  UNIQUE (id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS connectivity_zones_tenant_status_idx ON connectivity_zones (tenant, status);
+CREATE INDEX IF NOT EXISTS connectivity_zones_status_idx ON connectivity_zones (status);
 
 CREATE TABLE IF NOT EXISTS reading_historys (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   reading_id INTEGER,
   changed_field TEXT,
   old_value TEXT,
@@ -177,14 +154,12 @@ CREATE TABLE IF NOT EXISTS reading_historys (
   changed_at TEXT,
   changed_by TEXT,
   revision_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (reading_id, tenant) REFERENCES readings(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS reading_historys_tenant_reading_id_idx ON reading_historys (tenant, reading_id);
+CREATE INDEX IF NOT EXISTS reading_historys_reading_id_idx ON reading_historys (reading_id);
 
 CREATE TABLE IF NOT EXISTS site_visits (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   site_id INTEGER,
   visit_date TEXT,
   purpose TEXT,
@@ -192,17 +167,13 @@ CREATE TABLE IF NOT EXISTS site_visits (
   technician_email TEXT,
   status TEXT,
   equipment_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (site_id, tenant) REFERENCES sites(id, tenant),
-  FOREIGN KEY (equipment_id, tenant) REFERENCES equipments(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS site_visits_tenant_site_id_idx ON site_visits (tenant, site_id);
-CREATE INDEX IF NOT EXISTS site_visits_tenant_equipment_id_idx ON site_visits (tenant, equipment_id);
-CREATE INDEX IF NOT EXISTS site_visits_tenant_status_idx ON site_visits (tenant, status);
+CREATE INDEX IF NOT EXISTS site_visits_site_id_idx ON site_visits (site_id);
+CREATE INDEX IF NOT EXISTS site_visits_equipment_id_idx ON site_visits (equipment_id);
 
 CREATE TABLE IF NOT EXISTS equipments (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   serial_number TEXT,
   type TEXT,
   installation_date TEXT,
@@ -210,15 +181,12 @@ CREATE TABLE IF NOT EXISTS equipments (
   site_id INTEGER,
   status TEXT,
   warranty_expiry TEXT,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (site_id, tenant) REFERENCES sites(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS equipments_tenant_site_id_idx ON equipments (tenant, site_id);
-CREATE INDEX IF NOT EXISTS equipments_tenant_status_idx ON equipments (tenant, status);
+CREATE INDEX IF NOT EXISTS equipments_site_id_idx ON equipments (site_id);
 
 CREATE TABLE IF NOT EXISTS calibration_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   equipment_id INTEGER,
   calibrated_at TEXT,
   calibrated_by TEXT,
@@ -226,17 +194,13 @@ CREATE TABLE IF NOT EXISTS calibration_logs (
   notes TEXT,
   status TEXT,
   reading_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (equipment_id, tenant) REFERENCES equipments(id, tenant),
-  FOREIGN KEY (reading_id, tenant) REFERENCES readings(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS calibration_logs_tenant_equipment_id_idx ON calibration_logs (tenant, equipment_id);
-CREATE INDEX IF NOT EXISTS calibration_logs_tenant_reading_id_idx ON calibration_logs (tenant, reading_id);
-CREATE INDEX IF NOT EXISTS calibration_logs_tenant_status_idx ON calibration_logs (tenant, status);
+CREATE INDEX IF NOT EXISTS calibration_logs_equipment_id_idx ON calibration_logs (equipment_id);
+CREATE INDEX IF NOT EXISTS calibration_logs_reading_id_idx ON calibration_logs (reading_id);
 
 CREATE TABLE IF NOT EXISTS notifications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   recipient_email TEXT,
   type TEXT,
   content TEXT,
@@ -244,13 +208,11 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TEXT,
   related_entity_id INTEGER,
   related_entity_type TEXT,
-  UNIQUE (id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS notifications_tenant_idx ON notifications (tenant);
 
 CREATE TABLE IF NOT EXISTS sync_policys (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   name TEXT,
   min_battery_level INTEGER,
   min_network_strength INTEGER,
@@ -259,14 +221,12 @@ CREATE TABLE IF NOT EXISTS sync_policys (
   created_at TEXT,
   updated_at TEXT,
   zone_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (zone_id, tenant) REFERENCES connectivity_zones(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS sync_policys_tenant_zone_id_idx ON sync_policys (tenant, zone_id);
+CREATE INDEX IF NOT EXISTS sync_policys_zone_id_idx ON sync_policys (zone_id);
 
 CREATE TABLE IF NOT EXISTS audit_trails (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   entity_type TEXT,
   entity_id INTEGER,
   action TEXT,
@@ -274,22 +234,19 @@ CREATE TABLE IF NOT EXISTS audit_trails (
   performed_by TEXT,
   metadata TEXT,
   device_id INTEGER,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (device_id, tenant) REFERENCES devices(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS audit_trails_tenant_device_id_idx ON audit_trails (tenant, device_id);
+CREATE INDEX IF NOT EXISTS audit_trails_entity_idx ON audit_trails (entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS audit_trails_device_id_idx ON audit_trails (device_id);
 
 CREATE TABLE IF NOT EXISTS maintenance_schedules (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  tenant TEXT NOT NULL DEFAULT 'default',
   equipment_id INTEGER,
   scheduled_date TEXT,
   type TEXT,
   status TEXT,
   notes TEXT,
   technician_email TEXT,
-  UNIQUE (id, tenant),
-  FOREIGN KEY (equipment_id, tenant) REFERENCES equipments(id, tenant)
+  row_version INTEGER DEFAULT 1
 );
-CREATE INDEX IF NOT EXISTS maintenance_schedules_tenant_equipment_id_idx ON maintenance_schedules (tenant, equipment_id);
-CREATE INDEX IF NOT EXISTS maintenance_schedules_tenant_status_idx ON maintenance_schedules (tenant, status);
+CREATE INDEX IF NOT EXISTS maintenance_schedules_equipment_id_idx ON maintenance_schedules (equipment_id);
