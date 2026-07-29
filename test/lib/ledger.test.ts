@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "bun:test";
 import type { D1Database } from "@cloudflare/workers-types";
 
 // Minimal D1 mock for unit tests — enough to verify hash chaining logic

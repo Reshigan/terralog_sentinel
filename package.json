@@ -4,7 +4,7 @@
   "scripts": {
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "bun test",
     "migrate": "wrangler d1 migrations apply desklog-db --local",
     "deploy": "wrangler deploy"
   },
@@ -14,7 +14,6 @@
     "eslint": "^9.22.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
-    "vitest": "^3.0.9",
     "wrangler": "^4.0.0"
   }
 }

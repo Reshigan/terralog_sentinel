@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach } from "bun:test";
 import type { D1Database } from "@cloudflare/workers-types";
 
 type MockEnv = { DB: D1Database };
