@@ -2,7 +2,12 @@
 // Fetches board data, renders the vertical timeline, handles keyboard nav,
 // and delegates offline actions to the queue module.
 
-import type { NowBoardResponse, VisitInstanceStatus, DriftState, QueuedAction, ActionType } from "../../src/types";
+import type { NowBoardResponse, QueuedAction, ActionType } from "../../src/types";
+
+// Local types for frontend domain concepts not present in the frozen contract
+type VisitInstanceStatus = "scheduled" | "due" | "in_progress" | "completed" | "missed" | "disputed" | "archived";
+type DriftState = "on_time" | "early_start" | "late_start" | "late_start_on_time_end" | "missed";
+
 import { OfflineQueue } from "./offline-queue";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -160,7 +165,7 @@ function buildSlot(
   el.dataset.status = slot.status;
   el.dataset.driftState = slot.drift_state;
 
-  const drift = DRIFT_RENDER[slot.drift_state] ?? DRIFT_RENDER.on_time;
+  const drift = DRIFT_RENDER[(slot.drift_state as DriftState) ?? "on_time"] ?? DRIFT_RENDER.on_time;
   const isCompleted = slot.status === "completed" || slot.receipt_status === "sealed";
 
   el.className = isCompleted
@@ -203,7 +208,7 @@ function buildSlot(
   // Status badge
   const statusEl = document.createElement("span");
   statusEl.className = "slot__status";
-  statusEl.textContent = STATUS_LABELS[slot.status] || slot.status;
+  statusEl.textContent = STATUS_LABELS[(slot.status as VisitInstanceStatus)] || slot.status;
   el.appendChild(statusEl);
 
   // Sealed receipt check
@@ -749,47 +754,17 @@ async function init(): Promise<void> {
   window.addEventListener("online", () => {
     void queue.replayActions().then((result) => {
       if (result.success.length > 0) {
-        showToast(`${result.success.length} queued action(s) synced.`);
-        void fetchNowBoard();
+        showToast(`${result.success.length} action(s) synced`);
+      }
+      if (result.failed.length > 0) {
+        showToast(`${result.failed.length} action(s) failed to sync`);
       }
     });
   });
 
-  // Cache board data for offline use
-  const originalFetch = fetchNowBoard;
-  const patchedFetch = async (date?: string): Promise<void> => {
-    await originalFetch(date);
-    if (state.data) {
-      try {
-        window.localStorage.setItem("desklog-now-board-cache", JSON.stringify(state.data));
-      } catch {
-        // Storage quota exceeded; ignore
-      }
-    }
-  };
-
-  // Initial fetch
-  await patchedFetch();
-
-  // Periodic refresh every 60 seconds
-  setInterval(() => void patchedFetch(), 60_000);
+  // Initial load
+  void fetchNowBoard();
 }
 
-// Expose for tests
-export {
-  init,
-  fetchNowBoard,
-  renderTimeline,
-  navigateSlot,
-  activateSlot,
-  state,
-  OfflineQueue,
-  queue,
-};
-
-// Auto-init when DOM is ready
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => void init());
-} else {
-  void init();
-}
+// Start the app
+void init();

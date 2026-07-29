@@ -90,16 +90,16 @@ class MockD1Database implements Pick<D1Database, "prepare" | "exec" | "batch"> {
         return Promise.resolve([]);
       },
     } as ReturnType<D1Database["prepare"]>;
-  },
+  }
 
   async exec(_sql: string): Promise<unknown> {
     return { results: [], meta: {} };
-  },
+  }
 
   async batch<T = unknown>(_statements: unknown[]): Promise<T[]> {
     return [] as T[];
-  },
-} as const;
+  }
+}
 
 function extractTable(sql: string): string {
   const fromMatch = sql.match(/from\s+(\w+)/i);
