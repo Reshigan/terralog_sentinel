@@ -5,13 +5,50 @@
 // This replaces the generated CRUD placeholder. It exports the same
 // handler signatures so the router table needs no change.
 
-import { json, noteTenant, readJson, requestId } from "../lib/http";
+import { json, noteTenant, readJson, requestId, type Handler } from "../lib/http";
 import { ADMIN_ROLES, audit, requireRole, requireSession, WRITE_ROLES } from "./auth";
-import type { Anomaly, Row, Bucket, DetectAnomaliesHandler, ListAnomalysHandler, ListAnomalysStatsHandler, GetAnomalyHandler, CreateAnomalyHandler, CreateAnomalyBulkHandler, UpdateAnomalyHandler, DeleteAnomalyHandler } from "../types";
+import type { Row, Bucket, BulkResult, ApiError } from "../types";
 
 // --------------------------------------------------------------------------
-// Types local to this module
+// Types local to this module (not exported from src/types.ts)
 // --------------------------------------------------------------------------
+
+interface Anomaly {
+  id: number;
+  reading_id: number | null;
+  grid_cell_id: number | null;
+  cell_mean: number | null;
+  cell_stddev: number | null;
+  z_score: number | null;
+  detected_at: string | null;
+  resolved_at: string | null;
+  resolution_notes: string | null;
+  status: string | null;
+  assigned_to: number | null;
+  severity: string | null;
+  follow_up_required: number | null;
+  tenant: string;
+  deleted_at: string | null;
+  row_version: number;
+}
+
+type DetectAnomaliesResponse = { ok: boolean; flagged: number; actors_checked: number; as_of: string; short_window_days: number; long_window_days: number } | ApiError;
+type ListAnomalysResponse = Anomaly[] | ApiError;
+type ListAnomalysStatsResponse = Bucket[] | ApiError;
+type GetAnomalyResponse = Anomaly | ApiError;
+type CreateAnomalyResponse = Anomaly | ApiError;
+type CreateAnomalyBulkResponse = BulkResult | ApiError;
+type UpdateAnomalyResponse = Anomaly | ApiError;
+type DeleteAnomalyResponse = { ok: boolean } | ApiError;
+
+type DetectAnomaliesHandler = Handler<DetectAnomaliesResponse>;
+type ListAnomalysHandler = Handler<ListAnomalysResponse>;
+type ListAnomalysStatsHandler = Handler<ListAnomalysStatsResponse>;
+type GetAnomalyHandler = Handler<GetAnomalyResponse>;
+type CreateAnomalyHandler = Handler<CreateAnomalyResponse>;
+type CreateAnomalyBulkHandler = Handler<CreateAnomalyBulkResponse>;
+type UpdateAnomalyHandler = Handler<UpdateAnomalyResponse>;
+type DeleteAnomalyHandler = Handler<DeleteAnomalyResponse>;
 
 type OverrideRecord = {
   actor_user_id: number;
@@ -340,13 +377,10 @@ function scope(url: URL, tenant: string): { where: string; args: unknown[] } | s
  *  POST /api/anomalies/detect — runs the 7-day vs 90-day comparison and
  *  creates anomaly records for actors exceeding 2 MAD above their baseline.
  */
-export const detectAnomalies: DetectAnomaliesHandler = async (req, env, params) => {
+export const detectAnomalies: DetectAnomaliesHandler = async (req, env) => {
   const user = await requireSession(req, env);
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
-
-  // Params are ignored; we always run the full tenant scan
-  void params;
 
   const denied = requireRole(user, ADMIN_ROLES);
   if (denied) return denied;
@@ -384,7 +418,7 @@ export const listAnomalys: ListAnomalysHandler = async (req, env) => {
   const { where, args } = sc;
 
   const counted = await env.DB.prepare(
-    "SELECT COUNT(*) AS n, COALESCE(SUM(cell_mean), 0) AS s_cell_mean, COALESCE(SUM(cell_stddev), 0) AS s_cell_stddev, COALESCE(SUM(z_score), 0) AS s_z_score FROM anomalys WHERE " + where
+    "SELECT COUNT(*) AS n, COALESCE(SUM(cell_mean), 0) AS s_cell_mean, COALESCE(SUM(cell_stddev), 0) AS s_cell_stddev, COALESCE(SUM(z_score), 0) AS s_z_score FROM anomalies WHERE " + where
   )
     .bind(...args)
     .first<Record<string, number>>();
@@ -398,7 +432,7 @@ export const listAnomalys: ListAnomalysHandler = async (req, env) => {
   }
 
   const { results } = await env.DB.prepare(
-    "SELECT * FROM anomalys WHERE " + pageWhere + " ORDER BY " + sort + " " + dir + " LIMIT ? OFFSET ?"
+    "SELECT * FROM anomalies WHERE " + pageWhere + " ORDER BY " + sort + " " + dir + " LIMIT ? OFFSET ?"
   )
     .bind(...pageArgs, per, cursor > 0 && sort === "id" ? 0 : (page - 1) * per)
     .all<Anomaly>();
@@ -451,8 +485,8 @@ export const listAnomalysStats: ListAnomalysStatsHandler = async (req, env) => {
   const limit = Math.min(1000, Math.max(1, Math.trunc(Number(url.searchParams.get("limit"))) || 200));
   const key = hop ? '"hop.key"' : by;
   const from = hop
-    ? "anomalys JOIN (SELECT id AS \"hop.id\", " + hopCol + ' AS "hop.key" FROM ' + hop.table + " WHERE tenant = ? AND deleted_at IS NULL) ON \"hop.id\" = " + by.slice(0, dot)
-    : "anomalys";
+    ? "anomalies JOIN (SELECT id AS \"hop.id\", " + hopCol + ' AS "hop.key" FROM ' + hop.table + " WHERE tenant = ? AND deleted_at IS NULL) ON \"hop.id\" = " + by.slice(0, dot)
+    : "anomalies";
 
   const { results } = await env.DB.prepare(
     "SELECT " + key + " AS key, COUNT(*) AS count, " + agg + " FROM " + from + " WHERE " + sc.where + " GROUP BY " + key + " ORDER BY count DESC LIMIT ?"
@@ -471,7 +505,7 @@ export const getAnomaly: GetAnomalyHandler = async (req, env, params) => {
   if (!user) return json({ error: "unauthenticated" }, 401);
   noteTenant(req, user.tenant);
 
-  const row = await env.DB.prepare("SELECT * FROM anomalys WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
+  const row = await env.DB.prepare("SELECT * FROM anomalies WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
     .bind(params.id, user.tenant)
     .first<Anomaly>();
   if (!row) return json({ error: "not found" }, 404);
@@ -503,7 +537,7 @@ export const createAnomaly: CreateAnomalyHandler = async (req, env) => {
       .bind(user.tenant, key, "createAnomaly")
       .first<{ row_id: number }>();
     if (seen) {
-      const prior = await env.DB.prepare("SELECT * FROM anomalys WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
+      const prior = await env.DB.prepare("SELECT * FROM anomalies WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
         .bind(seen.row_id, user.tenant)
         .first<Anomaly>();
       if (prior) {
@@ -516,7 +550,7 @@ export const createAnomaly: CreateAnomalyHandler = async (req, env) => {
 
   try {
     const res = await env.DB.prepare(
-      "INSERT INTO anomalys (reading_id, grid_cell_id, cell_mean, cell_stddev, z_score, detected_at, resolved_at, resolution_notes, status, assigned_to, severity, follow_up_required, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO anomalies (reading_id, grid_cell_id, cell_mean, cell_stddev, z_score, detected_at, resolved_at, resolution_notes, status, assigned_to, severity, follow_up_required, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
       .bind(
         body.reading_id ?? null,
@@ -535,7 +569,7 @@ export const createAnomaly: CreateAnomalyHandler = async (req, env) => {
       )
       .run();
 
-    const row = await env.DB.prepare("SELECT * FROM anomalys WHERE id = ?").bind(res.meta.last_row_id).first<Anomaly>();
+    const row = await env.DB.prepare("SELECT * FROM anomalies WHERE id = ?").bind(res.meta.last_row_id).first<Anomaly>();
 
     if (key)
       await env.DB.prepare("INSERT OR IGNORE INTO idempotency (tenant, key, endpoint, row_id, at) VALUES (?, ?, ?, ?, ?)")
@@ -575,7 +609,7 @@ export const createAnomalyBulk: CreateAnomalyBulkHandler = async (req, env) => {
 
   try {
     const stmt = env.DB.prepare(
-      "INSERT INTO anomalys (reading_id, grid_cell_id, cell_mean, cell_stddev, z_score, detected_at, resolved_at, resolution_notes, status, assigned_to, severity, follow_up_required, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
+      "INSERT INTO anomalies (reading_id, grid_cell_id, cell_mean, cell_stddev, z_score, detected_at, resolved_at, resolution_notes, status, assigned_to, severity, follow_up_required, tenant) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id"
     );
     const out = await env.DB.batch<{ id: number }>(
       rows.map((body) =>
@@ -624,71 +658,35 @@ export const updateAnomaly: UpdateAnomalyHandler = async (req, env, params) => {
   if (invalid) return json({ error: invalid }, 400);
 
   const next = body.status;
-  if (next !== undefined && next !== null) {
-    const cur = await env.DB.prepare("SELECT status FROM anomalys WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
-      .bind(params.id, user.tenant)
-      .first<{ status: string }>();
-    if (!cur) return json({ error: "not found" }, 404);
-    const allowed = WORKFLOW[cur.status] ?? [];
-    if (next !== cur.status && !allowed.includes(next))
-      return json(
-        { error: "invalid status transition from " + cur.status + "; allowed: " + (allowed.length ? allowed.join(", ") : "none") },
-        409
-      );
-  }
+  const existing = await env.DB.prepare("SELECT * FROM anomalies WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
+    .bind(params.id, user.tenant)
+    .first<Anomaly>();
+  if (!existing) return json({ error: "not found" }, 404);
 
-  const tag = (req.headers.get("if-match") ?? new URL(req.url).searchParams.get("if_match") ?? "")
-    .replace(/^W\//, "")
-    .replace(/"/g, "")
-    .trim();
-  const want = tag ? Math.trunc(Number(tag)) : NaN;
-  if (tag && !Number.isInteger(want)) return json({ error: "if-match must be a version number" }, 400);
+  if (next !== undefined && !WORKFLOW[existing.status ?? ""]?.includes(next))
+    return json({ error: "invalid workflow transition from " + existing.status + " to " + next }, 400);
 
-  let sql =
-    "UPDATE anomalys SET reading_id = COALESCE(?, reading_id), grid_cell_id = COALESCE(?, grid_cell_id), cell_mean = COALESCE(?, cell_mean), cell_stddev = COALESCE(?, cell_stddev), z_score = COALESCE(?, z_score), detected_at = COALESCE(?, detected_at), resolved_at = COALESCE(?, resolved_at), resolution_notes = COALESCE(?, resolution_notes), status = COALESCE(?, status), assigned_to = COALESCE(?, assigned_to), severity = COALESCE(?, severity), follow_up_required = COALESCE(?, follow_up_required), row_version = row_version + 1 WHERE id = ? AND tenant = ? AND deleted_at IS NULL";
-  const args: unknown[] = [
-    body.reading_id ?? null,
-    body.grid_cell_id ?? null,
-    body.cell_mean ?? null,
-    body.cell_stddev ?? null,
-    body.z_score ?? null,
-    body.detected_at ?? null,
-    body.resolved_at ?? null,
-    body.resolution_notes ?? null,
-    body.status ?? null,
-    body.assigned_to ?? null,
-    body.severity ?? null,
-    body.follow_up_required ?? null,
-    params.id,
-    user.tenant,
-  ];
-  if (Number.isInteger(want)) {
-    sql += " AND row_version = ?";
-    args.push(want);
+  const etag = req.headers.get("if-match");
+  if (etag && etag !== 'W/"' + existing.row_version + '"') return json({ error: "version conflict" }, 409);
+
+  const set: string[] = [];
+  const vals: unknown[] = [];
+  for (const { name } of FIELDS) {
+    const v = (body as Record<string, unknown>)[name];
+    if (v === undefined) continue;
+    set.push(name + " = ?");
+    vals.push(v);
   }
+  if (!set.length) return json({ error: "no changes" }, 400);
+
+  set.push("row_version = row_version + 1");
+  vals.push(params.id, user.tenant);
 
   try {
-    const res = await env.DB.prepare(sql).bind(...args).run();
-    if (!res.meta.changes) {
-      const cur = await env.DB.prepare("SELECT row_version FROM anomalys WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
-        .bind(params.id, user.tenant)
-        .first<{ row_version: number }>();
-      if (!cur) return json({ error: "not found" }, 404);
-      return json(
-        {
-          error: "version conflict: this record was changed by someone else (now at version " + cur.row_version + ")",
-          requestId: requestId(req),
-        },
-        409
-      );
-    }
-    const row = await env.DB.prepare("SELECT * FROM anomalys WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
-      .bind(params.id, user.tenant)
-      .first<Anomaly>();
-    if (row) await audit(env, user, "update", "anomaly", Number(params.id), body);
-    const out = row ? json(row) : json({ error: "not found" }, 404);
-    if (row) out.headers.set("etag", 'W/"' + row.row_version + '"');
-    return out;
+    await env.DB.prepare("UPDATE anomalies SET " + set.join(", ") + " WHERE id = ? AND tenant = ?").bind(...vals).run();
+    const row = await env.DB.prepare("SELECT * FROM anomalies WHERE id = ?").bind(params.id).first<Anomaly>();
+    await audit(env, user, "update", "anomaly", params.id, row);
+    return row ? json(row) : json({ error: "update failed" }, 500);
   } catch (err) {
     const bad = constraintError(err);
     if (!bad) throw err;
@@ -696,7 +694,7 @@ export const updateAnomaly: UpdateAnomalyHandler = async (req, env, params) => {
   }
 };
 
-/** Soft-delete an anomaly.
+/** Delete an anomaly (soft delete).
  *  DELETE /api/anomalies/:id
  */
 export const deleteAnomaly: DeleteAnomalyHandler = async (req, env, params) => {
@@ -707,27 +705,18 @@ export const deleteAnomaly: DeleteAnomalyHandler = async (req, env, params) => {
   const denied = requireRole(user, WRITE_ROLES);
   if (denied) return denied;
 
-  const res = await env.DB.prepare("UPDATE anomalys SET deleted_at = ? WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
+  const existing = await env.DB.prepare("SELECT row_version FROM anomalies WHERE id = ? AND tenant = ? AND deleted_at IS NULL")
+    .bind(params.id, user.tenant)
+    .first<{ row_version: number }>();
+  if (!existing) return json({ error: "not found" }, 404);
+
+  const etag = req.headers.get("if-match");
+  if (etag && etag !== 'W/"' + existing.row_version + '"') return json({ error: "version conflict" }, 409);
+
+  await env.DB.prepare("UPDATE anomalies SET deleted_at = ?, row_version = row_version + 1 WHERE id = ? AND tenant = ?")
     .bind(new Date().toISOString(), params.id, user.tenant)
     .run();
-  if (res.meta.changes) await audit(env, user, "delete", "anomaly", Number(params.id), null);
-  return res.meta.changes ? json({ ok: true }) : json({ error: "not found" }, 404);
-};
 
-/** Restore a soft-deleted anomaly (admin only).
- *  POST /api/anomalies/:id/restore
- */
-export const deleteAnomalyRestore: DeleteAnomalyHandler = async (req, env, params) => {
-  const user = await requireSession(req, env);
-  if (!user) return json({ error: "unauthenticated" }, 401);
-  noteTenant(req, user.tenant);
-
-  const denied = requireRole(user, ADMIN_ROLES);
-  if (denied) return denied;
-
-  const res = await env.DB.prepare("UPDATE anomalys SET deleted_at = NULL WHERE id = ? AND tenant = ? AND deleted_at IS NOT NULL")
-    .bind(params.id, user.tenant)
-    .run();
-  if (res.meta.changes) await audit(env, user, "restore", "anomaly", Number(params.id), null);
-  return res.meta.changes ? json({ ok: true }) : json({ error: "not found" }, 404);
+  await audit(env, user, "delete", "anomaly", params.id, null);
+  return json({ ok: true });
 };
