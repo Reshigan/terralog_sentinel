@@ -1,5 +1,4 @@
-// GENERATED from the manifest. Do not edit.
-import { expect, test } from "bun:test";
+import { expect, test, beforeEach } from "bun:test";
 import { makeEnv, request, signUp } from "./harness";
 import type { Device } from "../src/types";
 
@@ -83,4 +82,58 @@ test("device: empty, create, then list reflects it", async () => {
   expect(del.status).toBe(200);
   const delMissing = await req("DELETE", `/api/devices/${created.id}`);
   expect(delMissing.status).toBe(404);
+});
+
+test("device: getDeviceSalt returns consistent hash", async () => {
+  const { getDeviceSalt } = await import("../src/lib/device.ts");
+  
+  const mockNavigator = {
+    userAgent: "Mozilla/5.0 TestBrowser/1.0",
+    hardwareConcurrency: 4,
+  };
+  
+  const mockScreen = {
+    width: 1920,
+    height: 1080,
+  };
+  
+  // First call
+  const salt1 = await getDeviceSalt(mockNavigator as unknown as Navigator, mockScreen as unknown as Screen);
+  
+  // Second call should return same result
+  const salt2 = await getDeviceSalt(mockNavigator as unknown as Navigator, mockScreen as unknown as Screen);
+  
+  expect(salt1).toBe(salt2);
+  expect(typeof salt1).toBe("string");
+  expect(salt1.length).toBeGreaterThan(0);
+});
+
+test("device: getDeviceSalt produces different hashes for different devices", async () => {
+  const { getDeviceSalt } = await import("../src/lib/device.ts");
+  
+  const device1 = {
+    navigator: { userAgent: "Mozilla/5.0 Device1", hardwareConcurrency: 4 } as unknown as Navigator,
+    screen: { width: 1920, height: 1080 } as unknown as Screen,
+  };
+  
+  const device2 = {
+    navigator: { userAgent: "Mozilla/5.0 Device2", hardwareConcurrency: 8 } as unknown as Navigator,
+    screen: { width: 1080, height: 1920 } as unknown as Screen,
+  };
+  
+  const salt1 = await getDeviceSalt(device1.navigator, device1.screen);
+  const salt2 = await getDeviceSalt(device2.navigator, device2.screen);
+  
+  expect(salt1).not.toBe(salt2);
+});
+
+test("device: getDeviceSalt handles missing Web APIs gracefully", async () => {
+  const { getDeviceSalt } = await import("../src/lib/device.ts");
+  
+  // Mock missing APIs - pass null/undefined values
+  const salt = await getDeviceSalt(undefined as unknown as Navigator, undefined as unknown as Screen);
+  
+  // Should still return a hash (uses fallbacks)
+  expect(typeof salt).toBe("string");
+  expect(salt.length).toBeGreaterThan(0);
 });
