@@ -1,6 +1,6 @@
 // FROZEN — Sentinel golden template. Do not edit; write handlers in src/handlers/.
 // Routing, error capture and the structured access log all live in handle()
-// (src/lib/http.ts), so every route gets them whether the route table was stamped
+// (src/lib/http.ts), so every route table was stamped
 // from a manifest or hand-written by a model.
 import { routes } from "./routes";
 import { handle, type Env } from "./lib/http";

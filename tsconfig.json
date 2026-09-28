@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "strict": true,
@@ -8,9 +9,10 @@
     "noUnusedParameters": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "lib": [
-      "es2022",
-      "webworker"
-    ]
-  }
+    "jsx": "preserve",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "public/**/*"]
 }

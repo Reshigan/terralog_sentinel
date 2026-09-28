@@ -117,6 +117,63 @@ export async function decrypt(
 }
 
 /**
+ * Encrypts data using AES-256-GCM for IndexedDB storage.
+ * @param plaintext - Uint8Array data to encrypt
+ * @param key - CryptoKey for encryption
+ * @returns Object containing ciphertext and IV as Uint8Arrays
+ * @throws Error on crypto.subtle errors
+ */
+export async function encryptAesGcm(
+  plaintext: Uint8Array,
+  key: CryptoKey
+): Promise<{ ciphertext: Uint8Array; iv: Uint8Array }> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+
+  let ciphertext: ArrayBuffer;
+  try {
+    ciphertext = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      plaintext
+    );
+  } catch (e) {
+    throw new Error(`Encryption failed: ${e instanceof Error ? e.message : "unknown error"}`);
+  }
+
+  return {
+    ciphertext: new Uint8Array(ciphertext),
+    iv
+  };
+}
+
+/**
+ * Decrypts data using AES-256-GCM from IndexedDB storage.
+ * @param ciphertext - Uint8Array data to decrypt
+ * @param key - CryptoKey for decryption
+ * @param iv - Uint8Array initialization vector
+ * @returns Decrypted plaintext as Uint8Array
+ * @throws Error on crypto.subtle errors
+ */
+export async function decryptAesGcm(
+  ciphertext: Uint8Array,
+  key: CryptoKey,
+  iv: Uint8Array
+): Promise<Uint8Array> {
+  let plaintext: ArrayBuffer;
+  try {
+    plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv },
+      key,
+      ciphertext
+    );
+  } catch (e) {
+    throw new Error(`Decryption failed: ${e instanceof Error ? e.message : "unknown error"}`);
+  }
+
+  return new Uint8Array(plaintext);
+}
+
+/**
  * Generates a SHA-256 hash of the input string.
  * @param data - Input data to hash
  * @returns Hex-encoded hash
